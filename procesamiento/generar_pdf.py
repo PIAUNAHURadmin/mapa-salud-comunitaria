@@ -74,7 +74,8 @@ html = f"""<!doctype html><html lang="es"><head><meta charset="utf-8">
      <strong>Inteligencia Artificial</strong> — Universidad Nacional de Hurlingham.</p>
   <div class="meta">
     Documentación técnica para las Jornadas de Salud Comunitaria · 15 de octubre<br>
-    Generado el 29 de septiembre de 2026 · Acompaña al prototipo interactivo (index.html)
+    Sitio web publicado (Hosting): <strong>https://piaunahuradmin.github.io/mapa-salud-comunitaria/</strong><br>
+    Acompaña al prototipo interactivo (index.html)
   </div>
 </div></div>
 
@@ -212,10 +213,15 @@ html = f"""<!doctype html><html lang="es"><head><meta charset="utf-8">
     </tbody>
   </table>
 
+  <h3>Despliegue y Hosting</h3>
+  <p>El panel interactivo se encuentra publicado y disponible públicamente en la nube a través de <strong>GitHub Pages</strong>:</p>
+  <p><a href="https://piaunahuradmin.github.io/mapa-salud-comunitaria/" style="color:var(--verde);font-weight:bold;text-decoration:none;">https://piaunahuradmin.github.io/mapa-salud-comunitaria/</a></p>
+
   <h3>Tecnologías</h3>
   <table>
     <thead><tr><th>Capa</th><th>Tecnología</th></tr></thead>
     <tbody>
+      <tr><td>Hosting</td><td>GitHub Pages (<a href="https://piaunahuradmin.github.io/mapa-salud-comunitaria/">piaunahuradmin.github.io/mapa-salud-comunitaria</a>)</td></tr>
       <tr><td>Interfaz</td><td>HTML + daisyUI / Tailwind CSS (tema oscuro personalizado <code>salud</code>)</td></tr>
       <tr><td>Mapa</td><td>Leaflet + teselas Esri Dark Gray Canvas</td></tr>
       <tr><td>Ruteo vial</td><td>OSRM (OpenStreetMap Routing) para trazado sobre calles y avenidas</td></tr>
@@ -230,7 +236,7 @@ html = f"""<!doctype html><html lang="es"><head><meta charset="utf-8">
     <li>Desagregar los PDF provinciales (oncología, VIH, salud sexual, hospitales) a la RS VII.</li>
     <li>Validar direcciones, horarios y requisitos con los equipos territoriales.</li>
     <li>Evaluar integración de buscador conversacional asistido por IA sobre los efectores georreferenciados.</li>
-    <li>Publicar en GitHub Pages para disponer de una URL pública.</li>
+    <li>Monitorear uso y analíticas en la URL pública de GitHub Pages (<code>https://piaunahuradmin.github.io/mapa-salud-comunitaria/</code>).</li>
   </ul>
 </div>
 

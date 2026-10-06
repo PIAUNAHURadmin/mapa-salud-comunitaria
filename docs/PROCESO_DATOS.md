@@ -123,3 +123,8 @@ Para dar respuesta a la accesibilidad física a los efectores de salud, se incor
    - **Fallback resiliente**: Si el usuario no dispone de conexión al servicio de ruteo o falla la respuesta externa, el mapa dibuja una traza geodésica punteada directa calculando la distancia y tiempo estimado mediante la fórmula de Haversine.
    - **Guía paso a paso**: El sistema compara el partido del usuario con el del efector. Si coinciden, sugiere las líneas comunales directas. Si difieren, indica el trasbordo interurbano correspondiente, la línea a abordar, dónde descender y el tramo de caminata final.
    - **Integración profunda (Deep Linking)**: Se generan enlaces directos precargados a Google Maps (modo tránsito) y Moovit para que el usuario consulte frecuencias y horarios en tiempo real si lo desea.
+
+4. **Despliegue y hosting continuo (GitHub Pages)**:
+   - Dado que la solución está diseñada bajo una arquitectura 100% estática (sin requerir servidor backend ni bases de datos activas en runtime), el proyecto se publica directamente en la web a través de **GitHub Pages**:
+   - 🌐 **URL pública:** [https://piaunahuradmin.github.io/mapa-salud-comunitaria/](https://piaunahuradmin.github.io/mapa-salud-comunitaria/)
+   - Cualquier actualización en los scripts de procesamiento y archivos `.js` se refleja inmediatamente al sincronizar el repositorio.
