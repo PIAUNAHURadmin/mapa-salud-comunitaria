@@ -1,0 +1,331 @@
+[
+ {
+  "categoria": "ATENCION CLÍNICA GENERAL (hospitalaria)",
+  "subcategorias": [
+   {
+    "nombre": "MEDICINA GENERAL/CLÍNICA MÉDICA",
+    "municipios": [
+     "General Las Heras"
+    ]
+   },
+   {
+    "nombre": "PEDIATRÍA",
+    "municipios": [
+     "General Las Heras"
+    ]
+   },
+   {
+    "nombre": "GINECOLOGÍA Y OBSTETRICIA",
+    "municipios": [
+     "General Las Heras"
+    ]
+   },
+   {
+    "nombre": "GERIATRÍA/GERONTOLOGÍA",
+    "municipios": [
+     "General Las Heras"
+    ]
+   },
+   {
+    "nombre": "ODONTOLOGÍA",
+    "municipios": [
+     "General Las Heras"
+    ]
+   },
+   {
+    "nombre": "OFTALMOLOGÍA",
+    "municipios": [
+     "General Las Heras"
+    ]
+   },
+   {
+    "nombre": "TRAUMATOLOGÍA",
+    "municipios": [
+     "General Las Heras"
+    ]
+   },
+   {
+    "nombre": "DERMATOLOGÍA",
+    "municipios": [
+     "General Las Heras"
+    ]
+   }
+  ]
+ },
+ {
+  "categoria": "SALUD MENTAL Y CONSUMOS PROBLEMATICOS",
+  "subcategorias": [
+   {
+    "nombre": "PSICOLOGÍA/PSIQUIATRÍA",
+    "municipios": [
+     "General Las Heras"
+    ]
+   },
+   {
+    "nombre": "CONSUMOS PROBLEMÁTICOS/ADICCIONES (CPA)",
+    "municipios": [
+     "General Las Heras"
+    ]
+   },
+   {
+    "nombre": "DISPOSITIVOS DE ACOMPAÑAMIENTO EN SALUD MENTAL COMUNITARIA",
+    "municipios": [
+     "General Las Heras"
+    ]
+   }
+  ]
+ },
+ {
+  "categoria": "SALUD SEXUAL, REPRODUCTVA Y DE GÉNERO",
+  "subcategorias": [
+   {
+    "nombre": "Salud sexual y (no) reproductiva",
+    "municipios": [
+     "General Las Heras"
+    ]
+   },
+   {
+    "nombre": "Anticoncepción / ILE-IVE",
+    "municipios": [
+     "General Las Heras"
+    ]
+   },
+   {
+    "nombre": "Atención a violencia de género",
+    "municipios": [
+     "General Las Heras"
+    ]
+   },
+   {
+    "nombre": "Salud integral LGBTIQ+ (incluye acceso a tratamientos de afirmación de género)",
+    "municipios": [
+     "General Las Heras"
+    ]
+   }
+  ]
+ },
+ {
+  "categoria": "ENFERMEDADES TRANSMISIBLES",
+  "subcategorias": [
+   {
+    "nombre": "VIH/ITS",
+    "municipios": [
+     "General Las Heras"
+    ]
+   },
+   {
+    "nombre": "Tuberculosis",
+    "municipios": [
+     "General Las Heras"
+    ]
+   },
+   {
+    "nombre": "Dengue/zoonosis",
+    "municipios": [
+     "General Las Heras"
+    ]
+   },
+   {
+    "nombre": "Vacunación / inmunizaciones",
+    "municipios": [
+     "General Las Heras"
+    ]
+   }
+  ]
+ },
+ {
+  "categoria": "ENFERMEDADES CRÓNICAS NO TRASMISIBLES",
+  "subcategorias": [
+   {
+    "nombre": "Diabetes",
+    "municipios": [
+     "General Las Heras"
+    ]
+   },
+   {
+    "nombre": "Hipertensión / cardiovascular",
+    "municipios": [
+     "General Las Heras"
+    ]
+   },
+   {
+    "nombre": "Enfermedad renal",
+    "municipios": [
+     "General Las Heras"
+    ]
+   },
+   {
+    "nombre": "Oncología (derivación)",
+    "municipios": [
+     "General Las Heras"
+    ]
+   }
+  ]
+ },
+ {
+  "categoria": "DISCAPACIDAD Y REHABILITACION",
+  "subcategorias": [
+   {
+    "nombre": "Kinesiología / fisioterapia",
+    "municipios": [
+     "General Las Heras"
+    ]
+   },
+   {
+    "nombre": "Fonoaudiología",
+    "municipios": [
+     "General Las Heras"
+    ]
+   },
+   {
+    "nombre": "Terapia ocupacional",
+    "municipios": [
+     "General Las Heras"
+    ]
+   },
+   {
+    "nombre": "Certificado Único de Discapacidad (CUD)",
+    "municipios": [
+     "General Las Heras"
+    ]
+   }
+  ]
+ },
+ {
+  "categoria": "NUTRICION Y ALIMENTACION",
+  "subcategorias": [
+   {
+    "nombre": "Consultorios de nutrición",
+    "municipios": [
+     "General Las Heras"
+    ]
+   },
+   {
+    "nombre": "Programas alimentarios asociados a centros de salud",
+    "municipios": [
+     "General Las Heras"
+    ]
+   }
+  ]
+ },
+ {
+  "categoria": "SALUD COMUNITARIA Y TERRITORIAL",
+  "subcategorias": [
+   {
+    "nombre": "Agentes sanitarios / promotores de salud",
+    "municipios": [
+     "General Las Heras"
+    ]
+   },
+   {
+    "nombre": "Trabajo social",
+    "municipios": [
+     "General Las Heras"
+    ]
+   },
+   {
+    "nombre": "Salud escolar",
+    "municipios": [
+     "General Las Heras"
+    ]
+   },
+   {
+    "nombre": "Salud ambiental / determinantes territoriales",
+    "municipios": [
+     "General Las Heras"
+    ]
+   }
+  ]
+ },
+ {
+  "categoria": "POBLACIONES ESPECIFICAS",
+  "subcategorias": [
+   {
+    "nombre": "Salud del migrante / interculturalidad",
+    "municipios": [
+     "General Las Heras"
+    ]
+   },
+   {
+    "nombre": "Primera infancia",
+    "municipios": [
+     "General Las Heras"
+    ]
+   },
+   {
+    "nombre": "Adultos mayores",
+    "municipios": [
+     "General Las Heras"
+    ]
+   },
+   {
+    "nombre": "Personas en situación de calle",
+    "municipios": [
+     "General Las Heras"
+    ]
+   }
+  ]
+ },
+ {
+  "categoria": "URGENCIAS Y GUARDIA",
+  "subcategorias": [
+   {
+    "nombre": "Guardia 24 hs",
+    "municipios": [
+     "General Las Heras"
+    ]
+   },
+   {
+    "nombre": "Traslados / SAME (u homólogo municipal)",
+    "municipios": [
+     "General Las Heras"
+    ]
+   }
+  ]
+ },
+ {
+  "categoria": "FARMACIA",
+  "subcategorias": [
+   {
+    "nombre": "Provisión de medicamentos gratuitos / botiquín comunitario EXREMEDIAR MEDICAMENTOS BONAERENSES - SOLICITUD O INSCRIPCION AL PROGRAMA",
+    "municipios": [
+     "General Las Heras"
+    ]
+   }
+  ]
+ },
+ {
+  "categoria": "EFECTORES DE SALUD PUBLICA",
+  "subcategorias": [
+   {
+    "nombre": "PRIMER NIVEL",
+    "municipios": [
+     "General Las Heras"
+    ]
+   },
+   {
+    "nombre": "SEGUNDO NIVEL",
+    "municipios": [
+     "General Las Heras"
+    ]
+   },
+   {
+    "nombre": "TERCER NIVEL entrar a poblaciones .org y van a encontar ",
+    "municipios": [
+     "General Las Heras"
+    ]
+   }
+  ]
+ },
+ {
+  "categoria": "ESTABLECIMIENTOS DE SALUD COMPLEMENTARIOS",
+  "subcategorias": [
+   {
+    "nombre": "BANCOS DE SANGRE, SISTEMAS DE ATENCION EXTRAHOSPITALARIA, UNIDADES DE ATENCION MOVILES Y OTROS.",
+    "municipios": [
+     "General Las Heras"
+    ]
+   }
+  ]
+ }
+]

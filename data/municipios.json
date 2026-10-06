@@ -1,0 +1,62 @@
+[
+ {
+  "nombre": "General Las Heras",
+  "lat": -34.9280308,
+  "lon": -58.9445391,
+  "display_name": "General Las Heras, Doctor Antonio R. Chiocconi, General Las Heras, Partido de General Las Heras, Buenos Aires, 1741, Argentina"
+ },
+ {
+  "nombre": "General Rodríguez",
+  "lat": -34.6082302,
+  "lon": -58.9522206,
+  "display_name": "General Rodríguez, Partido de General Rodríguez, Buenos Aires, B1748, Argentina"
+ },
+ {
+  "nombre": "Hurlingham",
+  "lat": -34.5933423,
+  "lon": -58.6378405,
+  "display_name": "Hurlingham, Partido de Hurlingham, Buenos Aires, Argentina"
+ },
+ {
+  "nombre": "Ituzaingó",
+  "lat": -34.6583293,
+  "lon": -58.6671441,
+  "display_name": "Ituzaingó, Partido de Ituzaingó, Buenos Aires, Argentina"
+ },
+ {
+  "nombre": "Luján",
+  "lat": -34.5661734,
+  "lon": -59.1152598,
+  "display_name": "Luján, Partido de Luján, Buenos Aires, 6700, Argentina"
+ },
+ {
+  "nombre": "Marcos Paz",
+  "lat": -34.7865089,
+  "lon": -58.8296815,
+  "display_name": "Marcos Paz (Belgrano), Viena, La Trocha, Martín Fierro, Marcos Paz, Partido de Marcos Paz, Buenos Aires, 1727, Argentina"
+ },
+ {
+  "nombre": "Merlo",
+  "lat": -34.6604988,
+  "lon": -58.7321695,
+  "display_name": "Merlo, Partido de Merlo, Buenos Aires, Argentina"
+ },
+ {
+  "nombre": "Moreno",
+  "lat": -34.6396556,
+  "lon": -58.7898326,
+  "display_name": "Moreno, Partido de Moreno, Buenos Aires, Argentina"
+ },
+ {
+  "nombre": "Morón",
+  "lat": -34.6510527,
+  "lon": -58.6217416,
+  "display_name": "Morón, Partido de Morón, Buenos Aires, Argentina"
+ },
+ {
+  "nombre": "Tres de Febrero",
+  "lat": -34.5718753,
+  "lon": -58.4251993,
+  "display_name": "3 de Febrero, Avenida Dorrego, Palermo Pacífico, Palermo, Buenos Aires, Comuna 14, Ciudad Autónoma de Buenos Aires, C1425FTE, Argentina"
+ }
+]

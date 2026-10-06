@@ -1,0 +1,295 @@
+@import "tailwindcss";
+
+@plugin "daisyui" {
+  themes: false;
+}
+
+/* Tema oscuro personalizado "salud" (base oscura + acento verde salud) */
+@plugin "daisyui/theme" {
+  name: "salud";
+  default: true;
+  color-scheme: dark;
+
+  --color-base-100: #0d1420;
+  --color-base-200: #151e2e;
+  --color-base-300: #223047;
+  --color-base-content: #dbe4f0;
+
+  --color-primary: #10b981;
+  --color-primary-content: #022c22;
+  --color-secondary: #22a8d8;
+  --color-secondary-content: #04222e;
+  --color-accent: #f5a524;
+  --color-accent-content: #221200;
+  --color-neutral: #1b2436;
+  --color-neutral-content: #d5dbe6;
+
+  --color-info: #38bdf8;
+  --color-info-content: #082f49;
+  --color-success: #22c55e;
+  --color-success-content: #052e16;
+  --color-warning: #f5a524;
+  --color-warning-content: #221200;
+  --color-error: #ef4444;
+  --color-error-content: #450a0a;
+
+  --radius-selector: 0.5rem;
+  --radius-field: 0.5rem;
+  --radius-box: 1rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 0;
+  --noise: 0;
+}
+
+/* Ajustes específicos de Leaflet para que el mapa combine con el tema oscuro */
+.leaflet-container {
+  background: #0d1420 !important;
+  font-family: inherit;
+}
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+  background: #151e2e !important;
+  color: #dbe4f0 !important;
+  border: 1.5px solid #283a54 !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.7), 0 8px 10px -6px rgba(0, 0, 0, 0.5) !important;
+  border-radius: 0.875rem !important;
+}
+.leaflet-popup-content-wrapper .leaflet-popup-content {
+  color: #dbe4f0 !important;
+  margin: 12px 14px !important;
+  line-height: 1.4 !important;
+}
+.leaflet-container a.leaflet-popup-close-button {
+  color: #94a3b8 !important;
+  padding: 8px 8px 0 0 !important;
+  font-weight: bold !important;
+}
+.leaflet-container a.leaflet-popup-close-button:hover {
+  color: #ef4444 !important;
+}
+.leaflet-bar a {
+  background: #151e2e !important;
+  color: #dbe4f0 !important;
+  border-color: #223047 !important;
+}
+.leaflet-bar a:hover {
+  background: #223047 !important;
+}
+.leaflet-control-attribution {
+  background: rgba(13, 20, 32, 0.8) !important;
+  color: #9aa7ba !important;
+}
+.leaflet-control-attribution a {
+  color: #22a8d8 !important;
+}
+
+/* Botón "Cómo llegar en colectivo" en popup del mapa */
+.btn-popup-ruteo {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.5rem !important;
+  width: 100% !important;
+  margin-top: 0.85rem !important;
+  padding: 0.55rem 0.85rem !important;
+  background-color: #10b981 !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  font-size: 0.825rem !important;
+  line-height: 1.25rem !important;
+  border-radius: 0.5rem !important;
+  border: 1px solid #059669 !important;
+  cursor: pointer !important;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.35) !important;
+  transition: all 0.15s ease-in-out !important;
+  text-decoration: none !important;
+  user-select: none !important;
+}
+
+.btn-popup-ruteo:hover {
+  background-color: #059669 !important;
+  border-color: #047857 !important;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.45) !important;
+  transform: translateY(-1.5px) !important;
+  color: #ffffff !important;
+}
+
+.btn-popup-ruteo:active {
+  background-color: #047857 !important;
+  transform: translateY(0) scale(0.97) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Botón cómo llegar en la lista de resultados (Gris igual al botón Cerrar) */
+.btn-lista-ruteo {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.5rem !important;
+  width: 100% !important;
+  margin-top: 0.5rem !important;
+  padding: 0.45rem 0.75rem !important;
+  background-color: #223047 !important;
+  color: #dbe4f0 !important;
+  font-weight: 600 !important;
+  font-size: 0.775rem !important;
+  line-height: 1.25rem !important;
+  border-radius: 0.5rem !important;
+  border: 1px solid #334664 !important;
+  cursor: pointer !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25) !important;
+  transition: all 0.15s ease-in-out !important;
+  text-decoration: none !important;
+  user-select: none !important;
+}
+.btn-lista-ruteo:hover {
+  background-color: #2d405e !important;
+  border-color: #435b80 !important;
+  color: #ffffff !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.35) !important;
+}
+.btn-lista-ruteo:active {
+  background-color: #1e2b40 !important;
+  transform: translateY(0) scale(0.98) !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2) !important;
+}
+
+
+/* Modal de cómo llegar - SIN fondo oscuro ni difuminado para ver el mapa con el trazo */
+dialog#modal-como-llegar {
+  background: transparent !important;
+  color: #dbe4f0 !important;
+  border: none !important;
+  outline: none !important;
+}
+dialog#modal-como-llegar:focus,
+dialog#modal-como-llegar:focus-visible,
+#modal-como-llegar .modal-box:focus,
+#modal-como-llegar .modal-box:focus-visible {
+  outline: none !important;
+}
+dialog#modal-como-llegar::backdrop {
+  background: transparent !important;
+  background-color: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+#modal-como-llegar .modal-box {
+  background-color: #151e2e !important;
+  color: #dbe4f0 !important;
+  border: 1px solid #223047 !important;
+  box-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.75) !important;
+  border-radius: 1rem !important;
+  outline: none !important;
+}
+
+/* Botón 'X' circular en el borde superior derecho */
+.btn-modal-close-x {
+  position: absolute !important;
+  right: 1rem !important;
+  top: 1rem !important;
+  width: 2.25rem !important;
+  height: 2.25rem !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 9999px !important;
+  background-color: #223047 !important;
+  color: #94a3b8 !important;
+  border: 1px solid #334664 !important;
+  font-size: 1rem !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25) !important;
+  transition: all 0.15s ease-in-out !important;
+  z-index: 50 !important;
+  user-select: none !important;
+}
+.btn-modal-close-x:hover {
+  background-color: #ef4444 !important;
+  color: #ffffff !important;
+  border-color: #dc2626 !important;
+  transform: scale(1.08) !important;
+  box-shadow: 0 4px 10px rgba(239, 68, 68, 0.45) !important;
+}
+.btn-modal-close-x:active {
+  transform: scale(0.95) !important;
+}
+
+/* Botones inferiores del modal (Google Maps, Moovit, Cerrar) con aspecto de botón sobrio y hover */
+.btn-accion-modal {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  width: 100% !important;
+  padding: 0.7rem 0.5rem !important;
+  border-radius: 0.75rem !important;
+  font-weight: 700 !important;
+  font-size: 0.85rem !important;
+  cursor: pointer !important;
+  text-decoration: none !important;
+  user-select: none !important;
+  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.btn-accion-gmaps {
+  background-color: #1e3a5f !important;
+  color: #dbe4f0 !important;
+  border: 1px solid #2e4d75 !important;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25) !important;
+}
+.btn-accion-gmaps:hover {
+  background-color: #274b7a !important;
+  border-color: #3b6396 !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 5px 12px rgba(0, 0, 0, 0.4) !important;
+  color: #ffffff !important;
+}
+.btn-accion-gmaps:active {
+  transform: translateY(0) scale(0.97) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2) !important;
+}
+
+.btn-accion-moovit {
+  background-color: #4a2618 !important;
+  color: #dbe4f0 !important;
+  border: 1px solid #6b3723 !important;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25) !important;
+}
+.btn-accion-moovit:hover {
+  background-color: #633320 !important;
+  border-color: #85452c !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 5px 12px rgba(0, 0, 0, 0.4) !important;
+  color: #ffffff !important;
+}
+.btn-accion-moovit:active {
+  transform: translateY(0) scale(0.97) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2) !important;
+}
+
+.btn-accion-cerrar {
+  background-color: #223047 !important;
+  color: #dbe4f0 !important;
+  border: 1px solid #334664 !important;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25) !important;
+}
+.btn-accion-cerrar:hover {
+  background-color: #2d405e !important;
+  border-color: #435b80 !important;
+  color: #ffffff !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 5px 12px rgba(0, 0, 0, 0.4) !important;
+}
+.btn-accion-cerrar:active {
+  transform: translateY(0) scale(0.97) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2) !important;
+}
+
+
+
+
