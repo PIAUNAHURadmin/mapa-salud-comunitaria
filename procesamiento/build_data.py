@@ -18,7 +18,11 @@ Salidas (carpeta `data/`):
 import json, os, re, time, glob, urllib.parse, urllib.request, sys
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
-SOURCE = os.path.abspath(os.path.join(ROOT, "..", "..", "drive-download-20260929T120752Z-1-001"))
+# Carpeta de datos crudos: `RawData` (antes se llamaba `drive-download-...`).
+_CANDIDATAS = ["RawData", "drive-download-20260929T120752Z-1-001"]
+SOURCE = next((os.path.abspath(os.path.join(ROOT, "..", "..", c)) for c in _CANDIDATAS
+               if os.path.isdir(os.path.join(ROOT, "..", "..", c))),
+              os.path.abspath(os.path.join(ROOT, "..", "..", "RawData")))
 DATA = os.path.join(ROOT, "..", "data")
 CACHE = os.path.join(ROOT, "geocode_cache.json")
 
@@ -53,16 +57,33 @@ def canon_mun(raw):
             return v
     return raw.strip().title()
 
+# Caja aproximada que contiene los 10 municipios de la Región Sanitaria VII.
+# Coordenadas fuera de esta caja se consideran geocodificación errónea
+# (p. ej. Nominatim devolvió una calle homónima en otro partido o en CABA).
+BBOX_RS7 = {"lat_min": -35.25, "lat_max": -34.35, "lon_min": -59.50, "lon_max": -58.49}
+
+# Coordenadas de referencia fijadas a mano cuando Nominatim resuelve mal el municipio.
+# "Tres de Febrero, Buenos Aires" devuelve la Av. 3 de Febrero en Palermo (CABA);
+# se usa Caseros, cabecera del partido.
+MUNICIPIO_COORD_MANUAL = {
+    "Tres de Febrero": {"lat": -34.6069, "lon": -58.5636,
+                        "display_name": "Caseros, Partido de Tres de Febrero, Buenos Aires, Argentina (fijado a mano)"},
+}
+
+def dentro_rs7(lat, lon):
+    return (BBOX_RS7["lat_min"] <= lat <= BBOX_RS7["lat_max"]
+            and BBOX_RS7["lon_min"] <= lon <= BBOX_RS7["lon_max"])
+
 # ---------------------------------------------------------------------------
 # 2) Geocodificación (Nominatim / OpenStreetMap) con caché y rate-limit
 # ---------------------------------------------------------------------------
 def load_cache():
     if os.path.exists(CACHE):
-        return json.load(open(CACHE))
+        return json.load(open(CACHE, encoding="utf-8"))
     return {}
 
 def save_cache(c):
-    json.dump(c, open(CACHE, "w"), ensure_ascii=False, indent=1)
+    json.dump(c, open(CACHE, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
 
 cache = load_cache()
 
@@ -82,7 +103,9 @@ def geocode(query, country="Argentina", sleep=1.1):
         else:
             res = None
     except Exception as e:
-        res = {"error": str(e)}
+        # Los errores de red NO se guardan en caché, para reintentar en la próxima corrida.
+        print("    [geocode] error de red:", e)
+        return None
     cache[key] = res
     save_cache(cache)
     time.sleep(sleep)
@@ -136,12 +159,29 @@ def classify(path):
         sub = 'Consultorios de nutrición'
     return cat, sub, nivel
 
+def _norm(t):
+    """Mayúsculas sin acentos ni guiones bajos, para comparar nombres."""
+    import unicodedata
+    t = unicodedata.normalize("NFKD", t or "").encode("ascii", "ignore").decode()
+    return t.upper().replace("_", " ").strip()
+
+def partido_coincide_con_archivo(path, partido_header):
+    """El nombre del archivo debe contener el partido de la cabecera.
+    Detecta archivos copiados/mal nombrados (p. ej. el de Tres de Febrero
+    que en realidad trae los datos de Morón)."""
+    nombre = _norm(os.path.basename(path))
+    return _norm(partido_header) in nombre
+
 def extract_efectores():
     files = glob.glob(os.path.join(SOURCE, "DATOS VINCULADOS A LA TABLA", "**", "*.xlsx"), recursive=True)
     recs = []
     for f in sorted(files):
         cat, sub, nivel = classify(f)
         meta, data = extract_xlsx(f)
+        if meta.get('partido') and not partido_coincide_con_archivo(f, meta['partido']):
+            print(f"  [AVISO] se omite {os.path.relpath(f, SOURCE)}: "
+                  f"la cabecera dice 'Partido: {meta['partido']}' y no coincide con el nombre del archivo")
+            continue
         partido = canon_mun(meta.get('partido', ''))
         for rec in data:
             recs.append({
@@ -164,6 +204,79 @@ def extract_efectores():
     return dedup
 
 # ---------------------------------------------------------------------------
+# 3b) Unificación: un registro por establecimiento con la lista de sus servicios
+# ---------------------------------------------------------------------------
+def _limpio(t):
+    return re.sub(r"\s+", " ", t or "").strip()
+
+def _clave_nombre(t):
+    """Nombre normalizado para comparar: sin tildes, sin signos, 'N° 5' -> '5'."""
+    t = _norm(t)
+    t = re.sub(r"[^A-Z0-9 ]", " ", t)
+    t = re.sub(r"\bN\s*O?\s*(?=\d)", "", t)
+    return re.sub(r"\s+", " ", t).strip()
+
+def unificar(efectores):
+    """Junta los registros del mismo establecimiento (mismo partido y nombre).
+    Ej.: un CAPS que figura en 'Primer Nivel' y también en 'Consultorios de nutrición'
+    (en los Excel su domicilio difería solo por espacios dobles)."""
+    grupos = {}
+    for r in efectores:
+        grupos.setdefault((r['partido'], _clave_nombre(r['nombre'])), []).append(r)
+    out = []
+    for regs in grupos.values():
+        # registro principal: el que tiene nivel de atención (viene de los listados de efectores)
+        base = dict(next((r for r in regs if r.get('nivel')), regs[0]))
+        # domicilios originales de todos los registros unidos (claves de la caché de geocodificación);
+        # se prueba primero el del registro principal y después los demás.
+        base['_doms_geo'] = [base['domicilio']] + [r['domicilio'] for r in regs if r['domicilio'] != base['domicilio']]
+        base['nombre'] = _limpio(base['nombre'])
+        base['domicilio'] = _limpio(base['domicilio'])
+        base['telefono'] = _limpio(base['telefono'])
+        base['servicios'] = []
+        for r in regs:
+            sv = {'categoria': r['categoria'], 'subcategoria': r['subcategoria']}
+            if sv not in base['servicios']:
+                base['servicios'].append(sv)
+        base['fuentes'] = ['listados_xlsx']
+        out.append(base)
+    return out
+
+def asignar_servicios_pdf(efectores):
+    """Suma a cada establecimiento los servicios de los PDF provinciales
+    (ver extraer_pdfs.py). NO agrega establecimientos nuevos: lo que no coincide
+    se guarda en servicios_sin_match.json para revisión manual."""
+    import difflib
+    path = os.path.join(ROOT, "servicios_pdf.json")
+    if not os.path.exists(path):
+        print("  [AVISO] falta servicios_pdf.json: correr antes `python extraer_pdfs.py`")
+        return
+    filas = json.load(open(path, encoding="utf-8"))
+    por_partido = {}
+    for e in efectores:
+        por_partido.setdefault(e['partido'], []).append(e)
+    sin_match, n_ok = [], 0
+    for f in filas:
+        cands = por_partido.get(f['partido'], [])
+        k = _clave_nombre(f['nombre'])
+        e = next((c for c in cands if _clave_nombre(c['nombre']) == k), None)
+        if e is None and cands:
+            mejor = max(cands, key=lambda c: difflib.SequenceMatcher(None, _clave_nombre(c['nombre']), k).ratio())
+            if difflib.SequenceMatcher(None, _clave_nombre(mejor['nombre']), k).ratio() >= 0.85:
+                e = mejor
+        if e is None:
+            sin_match.append(f); continue
+        sv = {'categoria': f['categoria'], 'subcategoria': f['subcategoria']}
+        if sv not in e['servicios']:
+            e['servicios'].append(sv)
+        if 'pdf_provinciales' not in e['fuentes']:
+            e['fuentes'].append('pdf_provinciales')
+        n_ok += 1
+    json.dump(sin_match, open(os.path.join(ROOT, "servicios_sin_match.json"), "w", encoding="utf-8"),
+              ensure_ascii=False, indent=1)
+    print(f"  servicios de PDF asignados: {n_ok}/{len(filas)} (sin coincidencia: {len(sin_match)})")
+
+# ---------------------------------------------------------------------------
 # 4) Limpieza de domicilio para geocodificación
 # ---------------------------------------------------------------------------
 def clean_address(domicilio, partido):
@@ -183,13 +296,18 @@ def main():
     do_geocode = "--geocode" in sys.argv
     print("Extrayendo efectores...")
     efectores = extract_efectores()
-    print(f"  {len(efectores)} efectores (deduplicados)")
+    print(f"  {len(efectores)} registros (deduplicados)")
+    efectores = unificar(efectores)
+    print(f"  {len(efectores)} establecimientos únicos (unificados por partido + nombre)")
+    asignar_servicios_pdf(efectores)
 
     # Municipios
     munis = sorted(set(r['partido'] for r in efectores if r['partido']))
     municipios = []
     for m in munis:
-        coord = geocode(f"{m}, Buenos Aires, Argentina") if do_geocode else None
+        coord = MUNICIPIO_COORD_MANUAL.get(m) or (geocode(f"{m}, Buenos Aires, Argentina") if do_geocode else None)
+        if coord and 'lat' in coord and not dentro_rs7(coord['lat'], coord['lon']):
+            print(f"  [AVISO] el centro del municipio {m} cae fuera de la RS VII: revisar MUNICIPIO_COORD_MANUAL")
         municipios.append({
             'nombre': m,
             'lat': coord['lat'] if coord else None,
@@ -204,10 +322,19 @@ def main():
     # Georreferenciar efectores
     n_geo = 0
     for i, r in enumerate(efectores):
-        q = clean_address(r['domicilio'], r['partido'])
         coord = None
-        if do_geocode and q:
-            coord = geocode(q)
+        for dom in r.pop('_doms_geo', [r['domicilio']]):
+            q = clean_address(dom, r['partido'])
+            if do_geocode and q:
+                c = geocode(q)
+                if c and 'lat' in c and dentro_rs7(c['lat'], c['lon']):
+                    coord = c
+                    break
+                coord = coord or c
+        if coord and 'lat' in coord and not dentro_rs7(coord['lat'], coord['lon']):
+            print(f"  [AVISO] coordenada fuera de la RS VII descartada: {r['nombre']} ({r['partido']}) "
+                  f"-> {coord['lat']:.4f}, {coord['lon']:.4f}")
+            coord = None
         if coord and 'lat' in coord:
             r['lat'] = coord['lat']
             r['lon'] = coord['lon']
@@ -241,19 +368,44 @@ def main():
         'total_efectores': len(efectores),
         'total_municipios': len(municipios),
         'por_municipio': dict(Counter(r['partido'] for r in efectores)),
-        'por_categoria': dict(Counter(r['categoria'] for r in efectores)),
-        'por_nivel': dict(Counter(r['nivel'] if r['nivel'] else 'Consultorios (nutrición)' for r in efectores)),
+        'por_categoria': dict(Counter(s['categoria'] for r in efectores for s in r['servicios'])),
+        'por_subcategoria': dict(Counter(s['subcategoria'] for r in efectores for s in r['servicios'])),
+        'por_nivel': dict(Counter(r['nivel'] if r['nivel'] else 'Sin nivel' for r in efectores)),
         'categorias': len(tax),
     }
 
     # Escribir salidas
-    json.dump(municipios, open(os.path.join(DATA, "municipios.json"), "w"), ensure_ascii=False, indent=1)
-    json.dump(efectores, open(os.path.join(DATA, "efectores.json"), "w"), ensure_ascii=False, indent=1)
-    json.dump(tax, open(os.path.join(DATA, "taxonomia.json"), "w"), ensure_ascii=False, indent=1)
-    json.dump(resumen, open(os.path.join(DATA, "resumen.json"), "w"), ensure_ascii=False, indent=1)
+    json.dump(municipios, open(os.path.join(DATA, "municipios.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+    json.dump(efectores, open(os.path.join(DATA, "efectores.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+    json.dump(tax, open(os.path.join(DATA, "taxonomia.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+    json.dump(resumen, open(os.path.join(DATA, "resumen.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
     print("\nResumen:")
     print(json.dumps(resumen, ensure_ascii=False, indent=2))
     print("\nSalidas escritas en", DATA)
+
+# Nombres canónicos: la taxonomía debe usar EXACTAMENTE los mismos textos que
+# `efectores.json`, porque el panel filtra por igualdad de texto.
+CATEGORIA_CANON = {
+    "EFECTORES DE SALUD PUBLICA": "EFECTORES DE SALUD PÚBLICA",
+    "NUTRICION Y ALIMENTACION": "NUTRICIÓN Y ALIMENTACIÓN",
+}
+SUBCATEGORIA_CANON = {
+    "PRIMER NIVEL": "Primer Nivel",
+    "SEGUNDO NIVEL": "Segundo Nivel",
+    "TERCER NIVEL": "Tercer Nivel",   # en el Excel tiene una nota pegada ("entrar a poblaciones...")
+}
+
+def canon_categoria(c):
+    c = str(c).strip()
+    return CATEGORIA_CANON.get(_norm(c), c)
+
+def canon_subcategoria(s):
+    s = str(s).strip()
+    n = _norm(s)
+    for k, v in SUBCATEGORIA_CANON.items():
+        if n == k or n.startswith(k + " "):
+            return v
+    return s
 
 def build_taxonomia():
     import openpyxl
@@ -263,14 +415,19 @@ def build_taxonomia():
     for row in ws.iter_rows(values_only=True):
         c, s, a, m, e, o = row
         if c and c not in ('CATEGORIA',):
+            c = canon_categoria(c)
             if c not in tax:
                 tax[c] = {}
             cur = c
         if s and s not in ('SUBCATEGORIA',) and cur and s:
+            s = canon_subcategoria(s)
             if s not in tax[cur]:
                 tax[cur][s] = set()
             if m and m not in ('MUNICIPIO',):
                 tax[cur][s].add(canon_mun(m))
+    # El nivel de atención (Primer/Segundo/Tercer) NO es un filtro del panel:
+    # se distingue por color en el mapa. Se quita esa categoría del menú.
+    tax.pop(CATEGORIA_CANON["EFECTORES DE SALUD PUBLICA"], None)
     out = []
     for c, subs in tax.items():
         out.append({'categoria': c, 'subcategorias': [

@@ -1,7 +1,7 @@
 # Proceso de datos — qué se hizo con cada archivo
 
-Los archivos originales están en la carpeta
-`drive-download-20260929T120752Z-1-001/`. A continuación se detalla el tratamiento
+Los archivos originales están en la carpeta `RawData/`
+(antes `drive-download-20260929T120752Z-1-001/`). Historial de cambios en [`CAMBIOS.md`](./CAMBIOS.md). A continuación se detalla el tratamiento
 dado a cada uno y el resultado.
 
 ## 1. Archivos Excel (`.xlsx`) → base de datos principal

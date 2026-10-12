@@ -8,7 +8,7 @@ Los datos finales se encuentran en `data/` en dos formatos equivalentes:
 
 ## `efectores.json` — efectores de salud
 
-Lista de **313** efectores (centros de salud, hospitales y consultorios).
+Lista de establecimientos únicos (un registro por establecimiento). `categoria`/`subcategoria`/`nivel` son los del registro principal; los servicios completos están en `servicios`.
 Cada elemento es un objeto con estos campos:
 
 | Campo | Tipo | Descripción | Ejemplo |
@@ -24,6 +24,8 @@ Cada elemento es un objeto con estos campos:
 | `lat` | number \| null | Latitud (WGS84) | `-34.5933` |
 | `lon` | number \| null | Longitud (WGS84) | `-58.6378` |
 | `geo_origen` | string | Método de georreferenciación | `"domicilio"`, `"centroide_municipio"`, `"sin_geo"` |
+| `servicios` | array | **Todos** los servicios del establecimiento: lista de `{categoria, subcategoria}`. El panel filtra por este campo. | `[{"categoria": "ENFERMEDADES TRANSMISIBLES", "subcategoria": "VIH/ITS"}]` |
+| `fuentes` | array | De dónde salen los datos | `["listados_xlsx", "pdf_provinciales"]` |
 
 ### Categorías presentes (2 con datos tabulares)
 
