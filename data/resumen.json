@@ -14,30 +14,31 @@
   "Tres de Febrero": 16
  },
  "por_categoria": {
-  "EFECTORES DE SALUD PÚBLICA": 229,
-  "ENFERMEDADES CRÓNICAS NO TRASMISIBLES": 18,
+  "EFECTORES DE SALUD PÚBLICA": 240,
+  "ENFERMEDADES CRÓNICAS NO TRASMISIBLES": 22,
   "ENFERMEDADES TRANSMISIBLES": 87,
   "NUTRICIÓN Y ALIMENTACIÓN": 84,
+  "POBLACIONES ESPECIFICAS": 15,
   "ATENCION CLÍNICA GENERAL (hospitalaria)": 6,
-  "POBLACIONES ESPECIFICAS": 4,
-  "SALUD SEXUAL, REPRODUCTVA Y DE GÉNERO": 16
+  "SALUD SEXUAL, REPRODUCTVA Y DE GÉNERO": 16,
+  "URGENCIAS Y GUARDIA": 3
  },
  "por_subcategoria": {
-  "Primer Nivel": 196,
-  "Oncología (derivación)": 18,
+  "Primer Nivel": 207,
+  "Oncología (derivación)": 22,
   "VIH/ITS": 87,
   "Consultorios de nutrición": 84,
+  "Primera infancia": 15,
   "GINECOLOGÍA Y OBSTETRICIA": 6,
-  "Primera infancia": 4,
   "Segundo Nivel": 30,
   "Anticoncepción / ILE-IVE": 16,
-  "Tercer Nivel": 3
+  "Tercer Nivel": 3,
+  "Guardia 24 hs": 3
  },
  "por_nivel": {
-  "Primer Nivel": 196,
+  "Primer Nivel": 207,
   "Segundo Nivel": 30,
-  "Tercer Nivel": 3,
-  "Sin nivel": 11
+  "Tercer Nivel": 3
  },
  "categorias": 12
 }

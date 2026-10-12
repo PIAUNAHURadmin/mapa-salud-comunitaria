@@ -628,10 +628,15 @@
    {
     "categoria": "EFECTORES DE SALUD PÚBLICA",
     "subcategoria": "Primer Nivel"
+   },
+   {
+    "categoria": "POBLACIONES ESPECIFICAS",
+    "subcategoria": "Primera infancia"
    }
   ],
   "fuentes": [
-   "listados_xlsx"
+   "listados_xlsx",
+   "pdf_provinciales"
   ],
   "lat": -34.5775309,
   "lon": -58.6415002,
@@ -650,10 +655,15 @@
    {
     "categoria": "EFECTORES DE SALUD PÚBLICA",
     "subcategoria": "Primer Nivel"
+   },
+   {
+    "categoria": "POBLACIONES ESPECIFICAS",
+    "subcategoria": "Primera infancia"
    }
   ],
   "fuentes": [
-   "listados_xlsx"
+   "listados_xlsx",
+   "pdf_provinciales"
   ],
   "lat": -34.5936368,
   "lon": -58.6684588,
@@ -680,6 +690,10 @@
    {
     "categoria": "ENFERMEDADES TRANSMISIBLES",
     "subcategoria": "VIH/ITS"
+   },
+   {
+    "categoria": "POBLACIONES ESPECIFICAS",
+    "subcategoria": "Primera infancia"
    }
   ],
   "fuentes": [
@@ -729,6 +743,10 @@
    {
     "categoria": "ENFERMEDADES TRANSMISIBLES",
     "subcategoria": "VIH/ITS"
+   },
+   {
+    "categoria": "POBLACIONES ESPECIFICAS",
+    "subcategoria": "Primera infancia"
    }
   ],
   "fuentes": [
@@ -760,6 +778,10 @@
    {
     "categoria": "ENFERMEDADES TRANSMISIBLES",
     "subcategoria": "VIH/ITS"
+   },
+   {
+    "categoria": "POBLACIONES ESPECIFICAS",
+    "subcategoria": "Primera infancia"
    }
   ],
   "fuentes": [
@@ -791,6 +813,10 @@
    {
     "categoria": "ENFERMEDADES TRANSMISIBLES",
     "subcategoria": "VIH/ITS"
+   },
+   {
+    "categoria": "POBLACIONES ESPECIFICAS",
+    "subcategoria": "Primera infancia"
    }
   ],
   "fuentes": [
@@ -814,10 +840,15 @@
    {
     "categoria": "EFECTORES DE SALUD PÚBLICA",
     "subcategoria": "Primer Nivel"
+   },
+   {
+    "categoria": "POBLACIONES ESPECIFICAS",
+    "subcategoria": "Primera infancia"
    }
   ],
   "fuentes": [
-   "listados_xlsx"
+   "listados_xlsx",
+   "pdf_provinciales"
   ],
   "lat": -34.6290648,
   "lon": -58.6468343,
@@ -836,10 +867,15 @@
    {
     "categoria": "EFECTORES DE SALUD PÚBLICA",
     "subcategoria": "Primer Nivel"
+   },
+   {
+    "categoria": "POBLACIONES ESPECIFICAS",
+    "subcategoria": "Primera infancia"
    }
   ],
   "fuentes": [
-   "listados_xlsx"
+   "listados_xlsx",
+   "pdf_provinciales"
   ],
   "lat": -34.59684,
   "lon": -58.64029,
@@ -866,6 +902,10 @@
    {
     "categoria": "ENFERMEDADES TRANSMISIBLES",
     "subcategoria": "VIH/ITS"
+   },
+   {
+    "categoria": "POBLACIONES ESPECIFICAS",
+    "subcategoria": "Primera infancia"
    }
   ],
   "fuentes": [
@@ -897,6 +937,10 @@
    {
     "categoria": "ENFERMEDADES TRANSMISIBLES",
     "subcategoria": "VIH/ITS"
+   },
+   {
+    "categoria": "POBLACIONES ESPECIFICAS",
+    "subcategoria": "Primera infancia"
    }
   ],
   "fuentes": [
@@ -951,10 +995,15 @@
    {
     "categoria": "EFECTORES DE SALUD PÚBLICA",
     "subcategoria": "Primer Nivel"
+   },
+   {
+    "categoria": "POBLACIONES ESPECIFICAS",
+    "subcategoria": "Primera infancia"
    }
   ],
   "fuentes": [
-   "listados_xlsx"
+   "listados_xlsx",
+   "pdf_provinciales"
   ],
   "lat": -34.5820316,
   "lon": -58.6663674,
@@ -5312,10 +5361,15 @@
    {
     "categoria": "EFECTORES DE SALUD PÚBLICA",
     "subcategoria": "Segundo Nivel"
+   },
+   {
+    "categoria": "ENFERMEDADES CRÓNICAS NO TRASMISIBLES",
+    "subcategoria": "Oncología (derivación)"
    }
   ],
   "fuentes": [
-   "listados_xlsx"
+   "listados_xlsx",
+   "pdf_provinciales"
   ],
   "lat": -34.666139,
   "lon": -58.7235377,
@@ -5534,10 +5588,15 @@
    {
     "categoria": "EFECTORES DE SALUD PÚBLICA",
     "subcategoria": "Segundo Nivel"
+   },
+   {
+    "categoria": "ENFERMEDADES CRÓNICAS NO TRASMISIBLES",
+    "subcategoria": "Oncología (derivación)"
    }
   ],
   "fuentes": [
-   "listados_xlsx"
+   "listados_xlsx",
+   "pdf_provinciales"
   ],
   "lat": -34.6617474,
   "lon": -58.6141531,
@@ -5556,10 +5615,15 @@
    {
     "categoria": "EFECTORES DE SALUD PÚBLICA",
     "subcategoria": "Segundo Nivel"
+   },
+   {
+    "categoria": "ENFERMEDADES CRÓNICAS NO TRASMISIBLES",
+    "subcategoria": "Oncología (derivación)"
    }
   ],
   "fuentes": [
-   "listados_xlsx"
+   "listados_xlsx",
+   "pdf_provinciales"
   ],
   "lat": -34.65085,
   "lon": -58.6216,
@@ -5749,10 +5813,15 @@
    {
     "categoria": "EFECTORES DE SALUD PÚBLICA",
     "subcategoria": "Segundo Nivel"
+   },
+   {
+    "categoria": "ENFERMEDADES CRÓNICAS NO TRASMISIBLES",
+    "subcategoria": "Oncología (derivación)"
    }
   ],
   "fuentes": [
-   "listados_xlsx"
+   "listados_xlsx",
+   "pdf_provinciales"
   ],
   "lat": -34.6281666,
   "lon": -58.7045412,
@@ -5775,11 +5844,16 @@
    {
     "categoria": "ENFERMEDADES TRANSMISIBLES",
     "subcategoria": "VIH/ITS"
+   },
+   {
+    "categoria": "URGENCIAS Y GUARDIA",
+    "subcategoria": "Guardia 24 hs"
    }
   ],
   "fuentes": [
    "listados_xlsx",
-   "pdf_provinciales"
+   "pdf_provinciales",
+   "transcripcion_imagen"
   ],
   "lat": -34.6151464,
   "lon": -58.6626534,
@@ -5810,11 +5884,16 @@
    {
     "categoria": "ENFERMEDADES TRANSMISIBLES",
     "subcategoria": "VIH/ITS"
+   },
+   {
+    "categoria": "URGENCIAS Y GUARDIA",
+    "subcategoria": "Guardia 24 hs"
    }
   ],
   "fuentes": [
    "listados_xlsx",
-   "pdf_provinciales"
+   "pdf_provinciales",
+   "transcripcion_imagen"
   ],
   "lat": -34.63856,
   "lon": -58.78906,
@@ -5837,10 +5916,15 @@
    {
     "categoria": "NUTRICIÓN Y ALIMENTACIÓN",
     "subcategoria": "Consultorios de nutrición"
+   },
+   {
+    "categoria": "URGENCIAS Y GUARDIA",
+    "subcategoria": "Guardia 24 hs"
    }
   ],
   "fuentes": [
-   "listados_xlsx"
+   "listados_xlsx",
+   "transcripcion_imagen"
   ],
   "lat": -34.6054,
   "lon": -58.56255,
@@ -5852,13 +5936,17 @@
   "telefono": "(11) 47505823, (11) 69471611",
   "sitio_web": "https://www.tresdefebrero.gov.ar/centrosdesalud/",
   "partido": "Tres de Febrero",
-  "categoria": "NUTRICIÓN Y ALIMENTACIÓN",
-  "subcategoria": "Consultorios de nutrición",
-  "nivel": null,
+  "categoria": "EFECTORES DE SALUD PÚBLICA",
+  "subcategoria": "Primer Nivel",
+  "nivel": "Primer Nivel",
   "servicios": [
    {
     "categoria": "NUTRICIÓN Y ALIMENTACIÓN",
     "subcategoria": "Consultorios de nutrición"
+   },
+   {
+    "categoria": "EFECTORES DE SALUD PÚBLICA",
+    "subcategoria": "Primer Nivel"
    },
    {
     "categoria": "SALUD SEXUAL, REPRODUCTVA Y DE GÉNERO",
@@ -5871,6 +5959,7 @@
   ],
   "fuentes": [
    "listados_xlsx",
+   "pdf_caps_provincial",
    "pdf_provinciales"
   ],
   "lat": -34.6171992,
@@ -5883,13 +5972,17 @@
   "telefono": "(11) 47500453",
   "sitio_web": "https://www.tresdefebrero.gov.ar/centrosdesalud/",
   "partido": "Tres de Febrero",
-  "categoria": "NUTRICIÓN Y ALIMENTACIÓN",
-  "subcategoria": "Consultorios de nutrición",
-  "nivel": null,
+  "categoria": "EFECTORES DE SALUD PÚBLICA",
+  "subcategoria": "Primer Nivel",
+  "nivel": "Primer Nivel",
   "servicios": [
    {
     "categoria": "NUTRICIÓN Y ALIMENTACIÓN",
     "subcategoria": "Consultorios de nutrición"
+   },
+   {
+    "categoria": "EFECTORES DE SALUD PÚBLICA",
+    "subcategoria": "Primer Nivel"
    },
    {
     "categoria": "SALUD SEXUAL, REPRODUCTVA Y DE GÉNERO",
@@ -5902,6 +5995,7 @@
   ],
   "fuentes": [
    "listados_xlsx",
+   "pdf_caps_provincial",
    "pdf_provinciales"
   ],
   "lat": -34.6192855,
@@ -5914,13 +6008,17 @@
   "telefono": "(11) 45875646",
   "sitio_web": "https://www.tresdefebrero.gov.ar/centrosdesalud/",
   "partido": "Tres de Febrero",
-  "categoria": "NUTRICIÓN Y ALIMENTACIÓN",
-  "subcategoria": "Consultorios de nutrición",
-  "nivel": null,
+  "categoria": "EFECTORES DE SALUD PÚBLICA",
+  "subcategoria": "Primer Nivel",
+  "nivel": "Primer Nivel",
   "servicios": [
    {
     "categoria": "NUTRICIÓN Y ALIMENTACIÓN",
     "subcategoria": "Consultorios de nutrición"
+   },
+   {
+    "categoria": "EFECTORES DE SALUD PÚBLICA",
+    "subcategoria": "Primer Nivel"
    },
    {
     "categoria": "ENFERMEDADES CRÓNICAS NO TRASMISIBLES",
@@ -5929,6 +6027,7 @@
   ],
   "fuentes": [
    "listados_xlsx",
+   "pdf_caps_provincial",
    "pdf_provinciales"
   ],
   "lat": -34.6030231,
@@ -5941,13 +6040,17 @@
   "telefono": "(11) 44884777, (11) 57026534",
   "sitio_web": "https://www.tresdefebrero.gov.ar/centrosdesalud/",
   "partido": "Tres de Febrero",
-  "categoria": "NUTRICIÓN Y ALIMENTACIÓN",
-  "subcategoria": "Consultorios de nutrición",
-  "nivel": null,
+  "categoria": "EFECTORES DE SALUD PÚBLICA",
+  "subcategoria": "Primer Nivel",
+  "nivel": "Primer Nivel",
   "servicios": [
    {
     "categoria": "NUTRICIÓN Y ALIMENTACIÓN",
     "subcategoria": "Consultorios de nutrición"
+   },
+   {
+    "categoria": "EFECTORES DE SALUD PÚBLICA",
+    "subcategoria": "Primer Nivel"
    },
    {
     "categoria": "SALUD SEXUAL, REPRODUCTVA Y DE GÉNERO",
@@ -5960,6 +6063,7 @@
   ],
   "fuentes": [
    "listados_xlsx",
+   "pdf_caps_provincial",
    "pdf_provinciales"
   ],
   "lat": -34.631779,
@@ -5972,13 +6076,17 @@
   "telefono": "(11) 46530086",
   "sitio_web": "-",
   "partido": "Tres de Febrero",
-  "categoria": "NUTRICIÓN Y ALIMENTACIÓN",
-  "subcategoria": "Consultorios de nutrición",
-  "nivel": null,
+  "categoria": "EFECTORES DE SALUD PÚBLICA",
+  "subcategoria": "Primer Nivel",
+  "nivel": "Primer Nivel",
   "servicios": [
    {
     "categoria": "NUTRICIÓN Y ALIMENTACIÓN",
     "subcategoria": "Consultorios de nutrición"
+   },
+   {
+    "categoria": "EFECTORES DE SALUD PÚBLICA",
+    "subcategoria": "Primer Nivel"
    },
    {
     "categoria": "SALUD SEXUAL, REPRODUCTVA Y DE GÉNERO",
@@ -5995,6 +6103,7 @@
   ],
   "fuentes": [
    "listados_xlsx",
+   "pdf_caps_provincial",
    "pdf_provinciales"
   ],
   "lat": -34.637555,
@@ -6007,13 +6116,17 @@
   "telefono": "(11) 47513251",
   "sitio_web": "https://www.tresdefebrero.gov.ar/centrosdesalud/",
   "partido": "Tres de Febrero",
-  "categoria": "NUTRICIÓN Y ALIMENTACIÓN",
-  "subcategoria": "Consultorios de nutrición",
-  "nivel": null,
+  "categoria": "EFECTORES DE SALUD PÚBLICA",
+  "subcategoria": "Primer Nivel",
+  "nivel": "Primer Nivel",
   "servicios": [
    {
     "categoria": "NUTRICIÓN Y ALIMENTACIÓN",
     "subcategoria": "Consultorios de nutrición"
+   },
+   {
+    "categoria": "EFECTORES DE SALUD PÚBLICA",
+    "subcategoria": "Primer Nivel"
    },
    {
     "categoria": "SALUD SEXUAL, REPRODUCTVA Y DE GÉNERO",
@@ -6026,6 +6139,7 @@
   ],
   "fuentes": [
    "listados_xlsx",
+   "pdf_caps_provincial",
    "pdf_provinciales"
   ],
   "lat": -34.6204263,
@@ -6038,13 +6152,17 @@
   "telefono": "(11) 70207910",
   "sitio_web": "https://www.tresdefebrero.gov.ar/centrosdesalud/",
   "partido": "Tres de Febrero",
-  "categoria": "NUTRICIÓN Y ALIMENTACIÓN",
-  "subcategoria": "Consultorios de nutrición",
-  "nivel": null,
+  "categoria": "EFECTORES DE SALUD PÚBLICA",
+  "subcategoria": "Primer Nivel",
+  "nivel": "Primer Nivel",
   "servicios": [
    {
     "categoria": "NUTRICIÓN Y ALIMENTACIÓN",
     "subcategoria": "Consultorios de nutrición"
+   },
+   {
+    "categoria": "EFECTORES DE SALUD PÚBLICA",
+    "subcategoria": "Primer Nivel"
    },
    {
     "categoria": "SALUD SEXUAL, REPRODUCTVA Y DE GÉNERO",
@@ -6057,6 +6175,7 @@
   ],
   "fuentes": [
    "listados_xlsx",
+   "pdf_caps_provincial",
    "pdf_provinciales"
   ],
   "lat": -34.6135375,
@@ -6069,13 +6188,17 @@
   "telefono": "(11) 22736928, (11) 47690565",
   "sitio_web": "https://www.tresdefebrero.gov.ar/centrosdesalud/",
   "partido": "Tres de Febrero",
-  "categoria": "NUTRICIÓN Y ALIMENTACIÓN",
-  "subcategoria": "Consultorios de nutrición",
-  "nivel": null,
+  "categoria": "EFECTORES DE SALUD PÚBLICA",
+  "subcategoria": "Primer Nivel",
+  "nivel": "Primer Nivel",
   "servicios": [
    {
     "categoria": "NUTRICIÓN Y ALIMENTACIÓN",
     "subcategoria": "Consultorios de nutrición"
+   },
+   {
+    "categoria": "EFECTORES DE SALUD PÚBLICA",
+    "subcategoria": "Primer Nivel"
    },
    {
     "categoria": "SALUD SEXUAL, REPRODUCTVA Y DE GÉNERO",
@@ -6088,6 +6211,7 @@
   ],
   "fuentes": [
    "listados_xlsx",
+   "pdf_caps_provincial",
    "pdf_provinciales"
   ],
   "lat": -34.5627186,
@@ -6100,13 +6224,17 @@
   "telefono": "(11) 47390224, (11) 55815490",
   "sitio_web": "https://www.tresdefebrero.gov.ar/centrosdesalud/",
   "partido": "Tres de Febrero",
-  "categoria": "NUTRICIÓN Y ALIMENTACIÓN",
-  "subcategoria": "Consultorios de nutrición",
-  "nivel": null,
+  "categoria": "EFECTORES DE SALUD PÚBLICA",
+  "subcategoria": "Primer Nivel",
+  "nivel": "Primer Nivel",
   "servicios": [
    {
     "categoria": "NUTRICIÓN Y ALIMENTACIÓN",
     "subcategoria": "Consultorios de nutrición"
+   },
+   {
+    "categoria": "EFECTORES DE SALUD PÚBLICA",
+    "subcategoria": "Primer Nivel"
    },
    {
     "categoria": "SALUD SEXUAL, REPRODUCTVA Y DE GÉNERO",
@@ -6119,6 +6247,7 @@
   ],
   "fuentes": [
    "listados_xlsx",
+   "pdf_caps_provincial",
    "pdf_provinciales"
   ],
   "lat": -34.5696889,
@@ -6131,13 +6260,17 @@
   "telefono": "(11) 47570093",
   "sitio_web": "https://www.tresdefebrero.gov.ar/centrosdesalud/",
   "partido": "Tres de Febrero",
-  "categoria": "NUTRICIÓN Y ALIMENTACIÓN",
-  "subcategoria": "Consultorios de nutrición",
-  "nivel": null,
+  "categoria": "EFECTORES DE SALUD PÚBLICA",
+  "subcategoria": "Primer Nivel",
+  "nivel": "Primer Nivel",
   "servicios": [
    {
     "categoria": "NUTRICIÓN Y ALIMENTACIÓN",
     "subcategoria": "Consultorios de nutrición"
+   },
+   {
+    "categoria": "EFECTORES DE SALUD PÚBLICA",
+    "subcategoria": "Primer Nivel"
    },
    {
     "categoria": "SALUD SEXUAL, REPRODUCTVA Y DE GÉNERO",
@@ -6150,6 +6283,7 @@
   ],
   "fuentes": [
    "listados_xlsx",
+   "pdf_caps_provincial",
    "pdf_provinciales"
   ],
   "lat": -34.5997432,
@@ -6162,13 +6296,17 @@
   "telefono": "(11) 48440790, (11) 77097844",
   "sitio_web": "https://www.tresdefebrero.gov.ar/centrosdesalud/",
   "partido": "Tres de Febrero",
-  "categoria": "NUTRICIÓN Y ALIMENTACIÓN",
-  "subcategoria": "Consultorios de nutrición",
-  "nivel": null,
+  "categoria": "EFECTORES DE SALUD PÚBLICA",
+  "subcategoria": "Primer Nivel",
+  "nivel": "Primer Nivel",
   "servicios": [
    {
     "categoria": "NUTRICIÓN Y ALIMENTACIÓN",
     "subcategoria": "Consultorios de nutrición"
+   },
+   {
+    "categoria": "EFECTORES DE SALUD PÚBLICA",
+    "subcategoria": "Primer Nivel"
    },
    {
     "categoria": "SALUD SEXUAL, REPRODUCTVA Y DE GÉNERO",
@@ -6181,6 +6319,7 @@
   ],
   "fuentes": [
    "listados_xlsx",
+   "pdf_caps_provincial",
    "pdf_provinciales"
   ],
   "lat": -34.6116,

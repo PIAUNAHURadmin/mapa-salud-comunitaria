@@ -5,6 +5,61 @@ frontend se aclara explícitamente en la entrada.
 
 ---
 
+## 2026-10-12 · Paso 3: integración con el repo + resto de fuentes de `RawData`
+
+Se trabajó sobre la versión del repositorio (la que incluye "Cómo llegar en colectivo") y se
+integraron los pasos 1 y 2. Solo se usaron archivos de `RawData`. **No se agregó ningún
+establecimiento nuevo** (siguen siendo 240).
+
+### 1. Nuevas fuentes incorporadas (`extraer_pdfs.py`)
+| Fuente en `RawData` | Servicio asignado | Establecimientos RS VII |
+|---|---|---|
+| `Oncología/Establecimiento IPC.pdf` (Instituto Provincial del Cáncer: banco de drogas, cuidados paliativos, radioterapia) | Enf. crónicas › Oncología (derivación) | 10 (todos ya estaban) |
+| `Programa Qunita/HURLINGHAM.pdf` | Poblaciones específicas › Primera infancia | 11 (todos ya estaban) |
+| `Hosp. Provinciales y Nacionales/R.S VII .jpg` (UPA 24 hs, transcripción manual en `procesamiento/transcripcion_rs7_upa24.csv`) | Urgencias y guardia › Guardia 24 hs | 3 (UPA 9, 12 y 16) |
+
+- **UPA 20 (General Rodríguez)** figura en la imagen pero **no está** en los listados entregados:
+  no se agregó (queda en `servicios_sin_match.json`).
+
+### 2. Tres de Febrero: 1er nivel recuperado
+- El Excel de 1er nivel de Tres de Febrero es copia del de Morón. Se reemplazó con los **11 CAPS de
+  Tres de Febrero** del listado provincial `RawData/CAPS/Listado_establecimientos_*.pdf`.
+- Los 11 ya estaban en el panel como consultorios de nutrición pero **sin nivel**. Ahora son
+  "Primer Nivel". No se agregaron puntos.
+
+### 3. Coincidencias más flexibles (y auditables)
+- Además del nombre exacto, `build_data.py` acepta: nombre parecido, mismas palabras clave del nombre
+  ("Centro de Salud 2 de Junio" = "UNIDAD SANITARIA 2 DE JUNIO DE HURLINGHAM") o misma calle y número
+  ("Barrio Mitre, Palermo 555" = "UNIDAD SANITARIA BARTOLOME MITRE"), solo si hay un único candidato.
+- Toda coincidencia que no fue por nombre exacto queda listada en
+  `procesamiento/servicios_coincidencias_a_revisar.json` (hoy 10) para que Salud Comunitaria la valide.
+- Al unificar registros, si un dato está vacío (teléfono, web) se completa con el de los otros registros.
+
+### 4. Detalles
+- El lector de PDF ahora acepta código postal vacío "()" (había 1 registro de Tigre que se perdía).
+
+### Qué muestra hoy el panel
+VIH/ITS 87 · Nutrición 84 · Oncología 22 · Anticoncepción/ILE-IVE 16 · Primera infancia 15 ·
+Ginecología y obstetricia 6 · Guardia 24 hs 3.
+
+### Archivos de `RawData` que NO aportan servicios (y por qué)
+- `CUD/*.jpg`: capturas del trámite del CUD. La única dirección es la Junta Evaluadora de Hurlingham
+  (Av. Vergara 3020), que no es un establecimiento de los listados. **Pendiente decidir si se agrega.**
+- `Oncología/ Hospitales.pdf`: listado general de hospitales (sin servicio específico).
+- `hospitales-pciales-y-nac.pdf`: solo indica dependencia provincial/nacional.
+- **No hay datos de ESI** en `RawData`.
+
+### Cómo regenerar
+```
+cd procesamiento
+python extraer_pdfs.py           # PDF + transcripción -> servicios_pdf.json, caps_tres_de_febrero.json
+python build_data.py --geocode   # Excel + servicios -> data/*.json
+python export_js.py              # data/*.js para el panel (incluye colectivos.js)
+```
+`build_data.py` busca `RawData` al lado de la carpeta del repo (`../RawData`).
+
+---
+
 ## 2026-09-29 · Paso 2: cada establecimiento en sus categorías
 
 Respaldo del estado anterior: `../_respaldo/2026-09-29_antes-paso2/`.

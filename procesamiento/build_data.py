@@ -233,14 +233,73 @@ def unificar(efectores):
         base['nombre'] = _limpio(base['nombre'])
         base['domicilio'] = _limpio(base['domicilio'])
         base['telefono'] = _limpio(base['telefono'])
+        # completar datos vacíos con los de los otros registros del mismo establecimiento
+        for campo in ('telefono', 'sitio_web'):
+            if base.get(campo) in (None, '', '-'):
+                base[campo] = next((_limpio(r[campo]) for r in regs if r.get(campo) not in (None, '', '-')), '-')
         base['servicios'] = []
         for r in regs:
             sv = {'categoria': r['categoria'], 'subcategoria': r['subcategoria']}
             if sv not in base['servicios']:
                 base['servicios'].append(sv)
-        base['fuentes'] = ['listados_xlsx']
+        base['fuentes'] = sorted({r.get('_fuente', 'listados_xlsx') for r in regs})
+        base.pop('_fuente', None)
         out.append(base)
     return out
+
+def caps_tres_de_febrero(efectores):
+    """Si no hay 1er nivel de Tres de Febrero (su Excel es copia del de Morón y se omite),
+    se usan los CAPS de Tres de Febrero del listado provincial de CAPS (RawData/CAPS)."""
+    if any(r['partido'] == 'Tres de Febrero' and r['nivel'] == 'Primer Nivel' for r in efectores):
+        return []
+    path = os.path.join(ROOT, "caps_tres_de_febrero.json")
+    if not os.path.exists(path):
+        print("  [AVISO] falta caps_tres_de_febrero.json: correr antes `python extraer_pdfs.py`")
+        return []
+    out = [{'nombre': c['nombre'], 'domicilio': c['domicilio'], 'telefono': c.get('telefono', '-'),
+            'sitio_web': '-', 'partido': 'Tres de Febrero', 'categoria': 'EFECTORES DE SALUD PÚBLICA',
+            'subcategoria': 'Primer Nivel', 'nivel': 'Primer Nivel', '_fuente': 'pdf_caps_provincial'}
+           for c in json.load(open(path, encoding="utf-8"))]
+    print(f"  + {len(out)} CAPS de Tres de Febrero desde RawData/CAPS (listado provincial)")
+    return out
+
+_STOP_NOMBRE = {"HOSPITAL", "CENTRO", "DE", "LA", "EL", "LOS", "LAS", "DEL", "Y", "SALUD", "GENERAL",
+                "ZONAL", "AGUDOS", "UNIDAD", "SANITARIA", "MUNICIPAL", "DR", "PROFESOR", "DOCTOR",
+                "INTERZONAL", "DESCENTRALIZADO", "CAPS", "ATENCION", "PRIMARIA", "BARRIO", "BO", "SALA"}
+_STOP_DOM = {"Y", "E", "ENTRE", "ESQUINA", "ESQ", "NRO", "N", "S", "BO", "BARRIO", "AV", "AVENIDA", "DE", "LA", "EL"}
+
+def _tokens_nombre(t, partido):
+    return {w for w in _clave_nombre(t).split() if w not in _STOP_NOMBRE} - set(_clave_nombre(partido).split())
+
+def _tokens_calle(dom):
+    calle = re.split(r"\s-\s", dom or "")[0]          # "PALERMO 555 ENTRE ... - BARRIO ..., PARTIDO (CP)"
+    return {w for w in _clave_nombre(calle).split() if w not in _STOP_DOM and len(w) > 1}
+
+def buscar_establecimiento(fila, candidatos):
+    """Devuelve (establecimiento, criterio) o (None, None). Criterios, en orden:
+    1. nombre igual (normalizado)  2. nombre parecido (>= 0.85)
+    3. mismas palabras clave en el nombre (ej. 'Centro de Salud 2 de Junio' = 'UNIDAD SANITARIA 2 DE JUNIO DE HURLINGHAM')
+    4. misma calle/número (ej. 'Centro de Salud Barrio Mitre, Palermo N°555' = 'UNIDAD SANITARIA BARTOLOME MITRE, PALERMO 555')
+    Los criterios 3 y 4 solo se aceptan si hay UN único candidato."""
+    import difflib
+    k = _clave_nombre(fila['nombre'])
+    e = next((c for c in candidatos if _clave_nombre(c['nombre']) == k), None)
+    if e: return e, "nombre"
+    if candidatos:
+        mejor = max(candidatos, key=lambda c: difflib.SequenceMatcher(None, _clave_nombre(c['nombre']), k).ratio())
+        if difflib.SequenceMatcher(None, _clave_nombre(mejor['nombre']), k).ratio() >= 0.85:
+            return mejor, "nombre parecido"
+    tn = _tokens_nombre(fila['nombre'], fila['partido'])
+    if tn:
+        iguales = [c for c in candidatos if _tokens_nombre(c['nombre'], c['partido']) == tn]
+        if len(iguales) == 1: return iguales[0], "palabras clave del nombre"
+    tc = _tokens_calle(fila.get('domicilio', ''))
+    if len(tc) >= 2:
+        def cubre(c):   # qué parte de la calle de la fuente aparece en el domicilio del establecimiento
+            o = _tokens_calle(c['domicilio']); return len(tc & o) / len(tc)
+        buenos = [c for c in candidatos if cubre(c) >= 0.8]
+        if len(buenos) == 1: return buenos[0], "domicilio"
+    return None, None
 
 def asignar_servicios_pdf(efectores):
     """Suma a cada establecimiento los servicios de los PDF provinciales
@@ -255,24 +314,25 @@ def asignar_servicios_pdf(efectores):
     por_partido = {}
     for e in efectores:
         por_partido.setdefault(e['partido'], []).append(e)
-    sin_match, n_ok = [], 0
+    sin_match, n_ok, criterios = [], 0, []
     for f in filas:
-        cands = por_partido.get(f['partido'], [])
-        k = _clave_nombre(f['nombre'])
-        e = next((c for c in cands if _clave_nombre(c['nombre']) == k), None)
-        if e is None and cands:
-            mejor = max(cands, key=lambda c: difflib.SequenceMatcher(None, _clave_nombre(c['nombre']), k).ratio())
-            if difflib.SequenceMatcher(None, _clave_nombre(mejor['nombre']), k).ratio() >= 0.85:
-                e = mejor
+        e, criterio = buscar_establecimiento(f, por_partido.get(f['partido'], []))
         if e is None:
             sin_match.append(f); continue
+        if criterio != "nombre":
+            criterios.append({"fuente": f['nombre'], "establecimiento": e['nombre'],
+                              "partido": f['partido'], "criterio": criterio, "archivo": f['archivo']})
         sv = {'categoria': f['categoria'], 'subcategoria': f['subcategoria']}
         if sv not in e['servicios']:
             e['servicios'].append(sv)
-        if 'pdf_provinciales' not in e['fuentes']:
-            e['fuentes'].append('pdf_provinciales')
+        fuente = 'transcripcion_imagen' if f['archivo'].endswith(')') else 'pdf_provinciales'
+        if fuente not in e['fuentes']:
+            e['fuentes'].append(fuente)
         n_ok += 1
     json.dump(sin_match, open(os.path.join(ROOT, "servicios_sin_match.json"), "w", encoding="utf-8"),
+              ensure_ascii=False, indent=1)
+    # coincidencias que no fueron por nombre exacto: para revisión humana
+    json.dump(criterios, open(os.path.join(ROOT, "servicios_coincidencias_a_revisar.json"), "w", encoding="utf-8"),
               ensure_ascii=False, indent=1)
     print(f"  servicios de PDF asignados: {n_ok}/{len(filas)} (sin coincidencia: {len(sin_match)})")
 
@@ -297,6 +357,7 @@ def main():
     print("Extrayendo efectores...")
     efectores = extract_efectores()
     print(f"  {len(efectores)} registros (deduplicados)")
+    efectores += caps_tres_de_febrero(efectores)
     efectores = unificar(efectores)
     print(f"  {len(efectores)} establecimientos únicos (unificados por partido + nombre)")
     asignar_servicios_pdf(efectores)
