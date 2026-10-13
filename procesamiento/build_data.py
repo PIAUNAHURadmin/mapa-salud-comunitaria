@@ -244,6 +244,7 @@ def unificar(efectores):
                 base['servicios'].append(sv)
         base['fuentes'] = sorted({r.get('_fuente', 'listados_xlsx') for r in regs})
         base.pop('_fuente', None)
+        base['_geo_nombre'] = any(r.get('_geo_nombre') for r in regs)
         out.append(base)
     return out
 
@@ -262,6 +263,31 @@ def caps_tres_de_febrero(efectores):
            for c in json.load(open(path, encoding="utf-8"))]
     print(f"  + {len(out)} CAPS de Tres de Febrero desde RawData/CAPS (listado provincial)")
     return out
+
+def establecimientos_adicionales(efectores):
+    """Lugares que aparecen en RawData fuera de los listados (imágenes, PDF de hospitales)
+    y no están en los Excel. Transcriptos a mano en establecimientos_adicionales.csv.
+    Solo se agregan si NO coinciden con un establecimiento existente (sin repetir)."""
+    import csv
+    path = os.path.join(ROOT, "establecimientos_adicionales.csv")
+    if not os.path.exists(path):
+        return []
+    por_partido = {}
+    for e in efectores:
+        por_partido.setdefault(e['partido'], []).append(e)
+    nuevos = []
+    for f in csv.DictReader(open(path, encoding="utf-8")):
+        existente, _ = buscar_establecimiento(f, por_partido.get(f['partido'], []))
+        if existente:
+            print(f"  [adicionales] ya existe, no se agrega: {f['nombre']} = {existente['nombre']}")
+            continue
+        dom = f['domicilio'] or f"Domicilio no informado en la fuente - {f['partido'].upper()} (ubicación aproximada)"
+        nuevos.append({'nombre': f['nombre'], 'domicilio': dom, 'telefono': f['telefono'] or '-',
+                       'sitio_web': '-', 'partido': f['partido'], 'categoria': f['categoria'],
+                       'subcategoria': f['subcategoria'], 'nivel': f['nivel'] or None,
+                       '_fuente': 'transcripcion_rawdata', '_geo_nombre': not f['domicilio']})
+    print(f"  + {len(nuevos)} establecimientos adicionales de RawData (establecimientos_adicionales.csv)")
+    return nuevos
 
 _STOP_NOMBRE = {"HOSPITAL", "CENTRO", "DE", "LA", "EL", "LOS", "LAS", "DEL", "Y", "SALUD", "GENERAL",
                 "ZONAL", "AGUDOS", "UNIDAD", "SANITARIA", "MUNICIPAL", "DR", "PROFESOR", "DOCTOR",
@@ -358,6 +384,7 @@ def main():
     efectores = extract_efectores()
     print(f"  {len(efectores)} registros (deduplicados)")
     efectores += caps_tres_de_febrero(efectores)
+    efectores += establecimientos_adicionales(efectores)
     efectores = unificar(efectores)
     print(f"  {len(efectores)} establecimientos únicos (unificados por partido + nombre)")
     asignar_servicios_pdf(efectores)
@@ -384,7 +411,13 @@ def main():
     n_geo = 0
     for i, r in enumerate(efectores):
         coord = None
-        for dom in r.pop('_doms_geo', [r['domicilio']]):
+        doms = r.pop('_doms_geo', [r['domicilio']])
+        if r.pop('_geo_nombre', False):      # sin domicilio en la fuente: se busca por nombre
+            c = geocode(f"{r['nombre']}, {r['partido']}, Buenos Aires, Argentina") if do_geocode else None
+            if c and 'lat' in c and dentro_rs7(c['lat'], c['lon']):
+                coord = c
+            doms = []
+        for dom in doms:
             q = clean_address(dom, r['partido'])
             if do_geocode and q:
                 c = geocode(q)

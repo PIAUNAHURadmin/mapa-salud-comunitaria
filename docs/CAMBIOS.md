@@ -5,6 +5,34 @@ frontend se aclara explícitamente en la entrada.
 
 ---
 
+## 2026-10-13 · Paso 3b: establecimientos de `RawData` que faltaban
+
+Se revisó **todo `RawData`** buscando establecimientos de la RS VII que no estuvieran en el panel.
+
+- **Listados PDF** (CAPS provincial, CAPS Hurlingham, Hospitales, salud sexual, oncología): sus
+  355 filas de la RS VII coinciden con establecimientos ya cargados. **No faltaba ninguno.**
+- **Fuera de los listados** faltaban 2, que se agregaron desde `procesamiento/establecimientos_adicionales.csv`
+  (transcripción manual, con la fuente de cada uno). El script solo los agrega si no existen ya:
+
+| Establecimiento | Fuente | Servicio |
+|---|---|---|
+| UPA 20 (General Rodríguez) | `R.S VII .jpg` y `hospitales-pciales-y-nac.pdf` | Urgencias y guardia › Guardia 24 hs |
+| Junta Evaluadora CUD (Av. Vergara 3020, Hurlingham) | `CUD/CUD2.jpg` | Discapacidad › Certificado Único de Discapacidad (CUD) |
+
+- ⚠️ **UPA 20**: la fuente no trae domicilio → punto aproximado en el centro de General Rodríguez.
+- **No se agregó** el Servicio Penitenciario Federal Complejo II (Marcos Paz): es el hospital de la
+  cárcel, no atiende al público.
+- Total: **242 establecimientos**. Guardia 24 hs: 4 · CUD: 1.
+
+### Control de repetidos
+Se compararon todos los pares del mismo partido (nombre, palabras clave y dirección). Hay 9 pares con
+dirección parecida, pero son **establecimientos distintos** registrados por separado por la Provincia,
+y se dejan así. Por ejemplo, el Hospital Odontológico y el Oftalmológico "Norberto Di Próspero" en
+Valentín Gómez 4545, o el CAPS y el Centro Integral de la Mujer en Haití y Turquía (Ituzaingó).
+En el mapa quedan uno sobre otro.
+
+---
+
 ## 2026-10-12 · Paso 3: integración con el repo + resto de fuentes de `RawData`
 
 Se trabajó sobre la versión del repositorio (la que incluye "Cómo llegar en colectivo") y se
@@ -18,8 +46,7 @@ establecimiento nuevo** (siguen siendo 240).
 | `Programa Qunita/HURLINGHAM.pdf` | Poblaciones específicas › Primera infancia | 11 (todos ya estaban) |
 | `Hosp. Provinciales y Nacionales/R.S VII .jpg` (UPA 24 hs, transcripción manual en `procesamiento/transcripcion_rs7_upa24.csv`) | Urgencias y guardia › Guardia 24 hs | 3 (UPA 9, 12 y 16) |
 
-- **UPA 20 (General Rodríguez)** figura en la imagen pero **no está** en los listados entregados:
-  no se agregó (queda en `servicios_sin_match.json`).
+- **UPA 20 (General Rodríguez)**: ver Paso 3b (se agregó).
 
 ### 2. Tres de Febrero: 1er nivel recuperado
 - El Excel de 1er nivel de Tres de Febrero es copia del de Morón. Se reemplazó con los **11 CAPS de
@@ -44,7 +71,7 @@ Ginecología y obstetricia 6 · Guardia 24 hs 3.
 
 ### Archivos de `RawData` que NO aportan servicios (y por qué)
 - `CUD/*.jpg`: capturas del trámite del CUD. La única dirección es la Junta Evaluadora de Hurlingham
-  (Av. Vergara 3020), que no es un establecimiento de los listados. **Pendiente decidir si se agrega.**
+  (Av. Vergara 3020): ver Paso 3b (se agregó).
 - `Oncología/ Hospitales.pdf`: listado general de hospitales (sin servicio específico).
 - `hospitales-pciales-y-nac.pdf`: solo indica dependencia provincial/nacional.
 - **No hay datos de ESI** en `RawData`.

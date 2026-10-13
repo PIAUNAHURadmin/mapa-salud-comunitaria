@@ -25,7 +25,7 @@ Cada elemento es un objeto con estos campos:
 | `lon` | number \| null | Longitud (WGS84) | `-58.6378` |
 | `geo_origen` | string | Método de georreferenciación | `"domicilio"`, `"centroide_municipio"`, `"sin_geo"` |
 | `servicios` | array | **Todos** los servicios del establecimiento: lista de `{categoria, subcategoria}`. El panel filtra por este campo. | `[{"categoria": "ENFERMEDADES TRANSMISIBLES", "subcategoria": "VIH/ITS"}]` |
-| `fuentes` | array | De dónde salen los datos: `listados_xlsx`, `pdf_caps_provincial`, `pdf_provinciales`, `transcripcion_imagen` | `["listados_xlsx", "pdf_provinciales"]` |
+| `fuentes` | array | De dónde salen los datos: `listados_xlsx`, `pdf_caps_provincial`, `pdf_provinciales`, `transcripcion_imagen`, `transcripcion_rawdata` | `["listados_xlsx", "pdf_provinciales"]` |
 
 ### Categorías presentes (2 con datos tabulares)
 

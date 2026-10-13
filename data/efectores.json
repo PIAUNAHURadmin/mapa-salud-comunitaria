@@ -6325,5 +6325,50 @@
   "lat": -34.6116,
   "lon": -58.56689,
   "geo_origen": "centroide_municipio"
+ },
+ {
+  "nombre": "UPA 20",
+  "domicilio": "Domicilio no informado en la fuente - GENERAL RODRÍGUEZ (ubicación aproximada)",
+  "telefono": "-",
+  "sitio_web": "-",
+  "partido": "General Rodríguez",
+  "categoria": "URGENCIAS Y GUARDIA",
+  "subcategoria": "Guardia 24 hs",
+  "nivel": "Tercer Nivel",
+  "servicios": [
+   {
+    "categoria": "URGENCIAS Y GUARDIA",
+    "subcategoria": "Guardia 24 hs"
+   }
+  ],
+  "fuentes": [
+   "transcripcion_rawdata",
+   "transcripcion_imagen"
+  ],
+  "lat": -34.60723,
+  "lon": -58.95152,
+  "geo_origen": "centroide_municipio"
+ },
+ {
+  "nombre": "JUNTA EVALUADORA CUD - CENTRO DE INCLUSION Y ACCESIBILIDAD PARA PERSONAS CON DISCAPACIDAD",
+  "domicilio": "AVENIDA VERGARA 3020 - HURLINGHAM, HURLINGHAM (1686)",
+  "telefono": "1126785304",
+  "sitio_web": "-",
+  "partido": "Hurlingham",
+  "categoria": "DISCAPACIDAD Y REHABILITACION",
+  "subcategoria": "Certificado Único de Discapacidad (CUD)",
+  "nivel": null,
+  "servicios": [
+   {
+    "categoria": "DISCAPACIDAD Y REHABILITACION",
+    "subcategoria": "Certificado Único de Discapacidad (CUD)"
+   }
+  ],
+  "fuentes": [
+   "transcripcion_rawdata"
+  ],
+  "lat": -34.6026408,
+  "lon": -58.6354268,
+  "geo_origen": "domicilio"
  }
 ]
