@@ -1,608 +1,1223 @@
-/* Panel de Salud Comunitaria · Región Sanitaria VII
-   Lógica de mapa (Leaflet) + filtros + resultados. Los datos llegan por
-   window.EFECTORES / window.MUNICIPIOS / window.TAXONOMIA. */
+/* ==========================================================================
+   Panel de Salud Comunitaria · UNAHUR
+   Lógica de Aplicación conforme al Manual de Estilo UX/UI (docs/UXUI.pdf)
+   ========================================================================== */
+
 (function () {
   "use strict";
 
+  // ---------------------------------------------------------------- Datos
   const EFECTORES = window.EFECTORES || [];
   const MUNICIPIOS = window.MUNICIPIOS || [];
   const TAXONOMIA = window.TAXONOMIA || [];
   const COLECTIVOS = window.COLECTIVOS || { lineas_por_partido: {}, conexiones_interurbanas: [] };
 
-  // ---------------------------------------------------------------- utilidades
+  // ---------------------------------------------------------------- Utilidades
   const $ = (id) => document.getElementById(id);
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
   function haversineKm(lat1, lon1, lat2, lon2) {
-    const R = 6371, toRad = (d) => (d * Math.PI) / 180;
-    const dLat = toRad(lat2 - lat1), dLon = toRad(lon2 - lon1);
+    const R = 6371;
+    const toRad = (d) => (d * Math.PI) / 180;
+    const dLat = toRad(lat2 - lat1);
+    const dLon = toRad(lon2 - lon1);
     const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   }
 
-  // ---------------------------------------------------------------- colores por tipo
-  const COLORS = {
-    "Primer Nivel": "#10b981",
-    "Segundo Nivel": "#22a8d8",
-    "Tercer Nivel": "#a78bfa",
-    "NUTRICIÓN Y ALIMENTACIÓN": "#f5a524",
-  };
-  const colorFor = (r) => (r.nivel ? COLORS[r.nivel] : COLORS[r.categoria]) || "#94a3b8";
+  function formatDistancia(km) {
+    if (km == null || !isFinite(km)) return "";
+    if (km < 1) {
+      return `${Math.round(km * 1000)} m`;
+    }
+    return `${km.toFixed(1).replace(".", ",")} km`;
+  }
 
-  const NIVEL_LABEL = { "Primer Nivel": "1º nivel", "Segundo Nivel": "2º nivel", "Tercer Nivel": "3º nivel" };
-
-  // ---------------------------------------------------------------- estado
+  // ---------------------------------------------------------------- Estado Global
   const state = {
-    categoria: "",
-    subcategoria: "",
+    vistaActual: "inicio",
+    vistaPrevia: "inicio",
+    categoria: "todas", // "todas" | "caps" | "hospitales" | "vacunacion" | "salud-mental" | "odontologia" | "rehabilitacion" | "oftalmologia" | "otros"
     municipio: "",
     texto: "",
-    ubicacion: null, // {lat, lon, label}
-    marcadorUsuario: null,
-    lineaRutaMapa: null,
+    ubicacion: null, // { lat, lon, label }
+    efectorSeleccionado: null,
+    origenRuteo: "ficha", // "ficha" | "mapa"
+    favoritos: [], // Array de nombres de efectores
+    ultimoEliminadoFav: null, // para Deshacer
+    debounceTimer: null,
+    sheetExpandido: false,
+    scrollPrevioResultados: 0
   };
 
-  // ---------------------------------------------------------------- mapa
-  const map = L.map("mapa", { zoomControl: true, attributionControl: true }).setView([-34.6, -58.8], 10);
-  L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}", {
-    attribution: '&copy; <a href="https://www.esri.com/">Esri</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-    maxZoom: 19,
-  }).addTo(map);
+  // Cargar favoritos de localStorage
+  try {
+    const saved = localStorage.getItem("unahur_salud_favoritos");
+    if (saved) state.favoritos = JSON.parse(saved);
+  } catch (e) {
+    state.favoritos = [];
+  }
 
-  const marcadores = []; // {efector, marker}
+  function guardarFavoritosStorage() {
+    try {
+      localStorage.setItem("unahur_salud_favoritos", JSON.stringify(state.favoritos));
+    } catch (e) {}
+    actualizarBadgesFavoritos();
+  }
+
+  function actualizarBadgesFavoritos() {
+    const count = state.favoritos.length;
+    const headerBadge = $("header-fav-count");
+    const bottomBadge = $("bottom-fav-count");
+    if (headerBadge) headerBadge.textContent = count;
+    if (bottomBadge) {
+      bottomBadge.textContent = count;
+      bottomBadge.style.display = count > 0 ? "inline-flex" : "none";
+    }
+  }
+
+  // ---------------------------------------------------------------- Notificaciones Toast (role="status")
+  let toastTimeout = null;
+  function mostrarToast(mensaje, permitirDeshacer = false, onDeshacer = null) {
+    const toast = $("toast-notificacion");
+    const msgSpan = $("toast-mensaje");
+    const btnUndo = $("btn-toast-undo");
+    if (!toast || !msgSpan) return;
+
+    if (toastTimeout) clearTimeout(toastTimeout);
+
+    msgSpan.textContent = mensaje;
+    if (permitirDeshacer && onDeshacer) {
+      btnUndo.style.display = "inline-block";
+      btnUndo.onclick = () => {
+        onDeshacer();
+        ocultarToast();
+      };
+    } else {
+      btnUndo.style.display = "none";
+      btnUndo.onclick = null;
+    }
+
+    toast.classList.add("show");
+    toastTimeout = setTimeout(() => {
+      ocultarToast();
+    }, 4500);
+  }
+
+  function ocultarToast() {
+    const toast = $("toast-notificacion");
+    if (toast) toast.classList.remove("show");
+  }
+
+  // ---------------------------------------------------------------- Mapa Leaflet (Claro Carto Voyager)
+  let map = null;
+  let marcadores = []; // { efector, marker }
+  let userMarker = null;
+  let lineaRutaMapa = null;
+
+  function initMap() {
+    if (map) return;
+    // Centro general de la Región Sanitaria VII
+    map = L.map("mapa", {
+      zoomControl: false,
+      attributionControl: true
+    }).setView([-34.62, -58.74], 11);
+
+    // Esri ArcGIS World_Street_Map: libre de bloqueos 403, funciona tanto desde file:/// como localhost, sin API key
+    L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}", {
+      attribution: '&copy; <a href="https://www.esri.com/" target="_blank">Esri</a> &copy; OpenStreetMap contributors',
+      maxZoom: 19
+    }).addTo(map);
+
+    // Controles de zoom manuales
+    $("btn-map-zoom-in")?.addEventListener("click", () => map && map.zoomIn());
+    $("btn-map-zoom-out")?.addEventListener("click", () => map && map.zoomOut());
+    $("btn-map-gps")?.addEventListener("click", () => solicitarGeolocalizacion());
+
+    // Clic en el mapa para fijar ubicación del usuario
+    map.on("click", (e) => {
+      fijarUbicacionUsuario(e.latlng.lat, e.latlng.lng, "Punto marcado en el mapa");
+    });
+  }
+
+  function getIconForEfector(r, isSelected = false) {
+    const isHospital = esHospital(r);
+    const className = isHospital ? "custom-pin-hospital" : "custom-pin-caps";
+    const selectedClass = isSelected ? " custom-pin-selected" : "";
+    
+    // Icono SVG según tipo
+    const svgIcon = isHospital
+      ? `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect width="16" height="20" x="4" y="2" rx="2"/><path d="M12 6v4"/><path d="M10 8h4"/></svg>`
+      : `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M12 11v6"/><path d="M9 14h6"/></svg>`;
+
+    return L.divIcon({
+      className: "custom-pin-wrapper",
+      html: `<div class="${className}${selectedClass}" title="${esc(r.nombre)}">${svgIcon}</div>`,
+      iconSize: [34, 34],
+      iconAnchor: [17, 17],
+      popupAnchor: [0, -18]
+    });
+  }
 
   function limpiarMarcadores() {
     marcadores.forEach((m) => m.marker.remove());
     marcadores.length = 0;
-    if (state.lineaRutaMapa) {
-      map.removeLayer(state.lineaRutaMapa);
-      state.lineaRutaMapa = null;
-    }
   }
 
   function construirPopup(r) {
-    const nivel = r.nivel ? `<span class="badge badge-sm border-[#a78bfa]/40 bg-[#a78bfa]/10 text-[#c4b5fd] font-medium">${esc(NIVEL_LABEL[r.nivel] || r.nivel)}</span>` : "";
-    const tel = r.telefono && r.telefono !== "-" ? `<div class="text-xs text-[#9aa7ba] mt-1 flex items-center gap-1.5"><span>📞</span><span>${esc(r.telefono)}</span></div>` : "";
+    const isHosp = esHospital(r);
+    const badgeHtml = isHosp
+      ? `<span class="badge-hospital">Hospital</span>`
+      : `<span class="badge-caps">CAPS · Primer nivel</span>`;
+    const distText = r._dist != null && isFinite(r._dist) ? `<div style="font-size: 12px; color: var(--action); font-weight: 600; margin-top: 4px;">📍 A ${formatDistancia(r._dist)} de vos</div>` : "";
+
     return `
-      <div class="min-w-[230px] p-0.5 text-[#dbe4f0]">
-        <div class="font-bold text-sm text-white leading-snug">${esc(r.nombre)}</div>
-        <div class="text-xs text-[#9aa7ba] mt-1">${esc(r.domicilio)}</div>
-        <div class="text-xs text-[#9aa7ba]">${esc(r.partido)}</div>
-        ${tel}
-        <div class="mt-2 flex items-center justify-between gap-1">
-          ${nivel}
+      <div style="min-width: 220px; font-family: var(--font-ui); padding: 2px;">
+        <div style="margin-bottom: 6px;">${badgeHtml}</div>
+        <div style="font-weight: 700; font-size: 14px; color: var(--ink); line-height: 1.3;">${esc(r.nombre)}</div>
+        <div style="font-size: 12px; color: var(--muted); margin-top: 4px;">${esc(r.domicilio)}</div>
+        <div style="font-size: 12px; color: var(--muted); font-weight: 500;">${esc(r.partido)}</div>
+        ${distText}
+        <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 6px;">
+          <button type="button" class="button button--primary" onclick="window.ruteoDesdeMapa('${esc(r.nombre)}')" style="min-height: 36px; padding: 6px 12px; font-size: 12px; width: 100%;">
+            🚌 Cómo llegar en colectivo
+          </button>
+          <button type="button" class="button button--secondary" onclick="window.abrirFichaDesdeMapa('${esc(r.nombre)}')" style="min-height: 32px; padding: 4px 12px; font-size: 12px; width: 100%;">
+            Ver ficha completa
+          </button>
         </div>
-        <button onclick="window.abrirRuteoEfector('${esc(r.nombre)}')" class="btn-popup-ruteo">
-          <span>🚌</span> Cómo llegar en colectivo
-        </button>
-      </div>`;
+      </div>
+    `;
   }
 
+  // ---------------------------------------------------------------- Clasificación y Filtros
+  function esHospital(r) {
+    const nom = (r.nombre || "").toUpperCase();
+    const sub = (r.subcategoria || "").toUpperCase();
+    const niv = (r.nivel || "").toUpperCase();
+    return sub.includes("SEGUNDO") || sub.includes("TERCER") || niv.includes("SEGUNDO") || niv.includes("TERCER") || nom.includes("HOSPITAL");
+  }
 
+  function cumpleCategoria(r, catKey) {
+    if (!catKey || catKey === "todas") return true;
+    const nom = (r.nombre || "").toLowerCase();
+    const sub = (r.subcategoria || "").toLowerCase();
+    const cat = (r.categoria || "").toLowerCase();
+    const textAll = `${nom} ${sub} ${cat}`;
 
-  // ---------------------------------------------------------------- render de marcadores y lista
-  function filtrar() {
+    switch (catKey) {
+      case "caps":
+        return !esHospital(r);
+      case "hospitales":
+        return esHospital(r);
+      case "vacunacion":
+        return textAll.includes("vacun") || textAll.includes("inmuniz") || !esHospital(r);
+      case "salud-mental":
+        return textAll.includes("mental") || textAll.includes("psicol") || textAll.includes("psiqui") || textAll.includes("cpa") || textAll.includes("adiccion");
+      case "odontologia":
+        return textAll.includes("odontol") || textAll.includes("dental") || textAll.includes("boca");
+      case "rehabilitacion":
+        return textAll.includes("rehab") || textAll.includes("kinesio") || textAll.includes("cemetri") || textAll.includes("estimulacion") || textAll.includes("terapia");
+      case "oftalmologia":
+        return textAll.includes("oftalmo") || textAll.includes("ojos") || textAll.includes("visual");
+      case "otros":
+        return textAll.includes("zoonosis") || textAll.includes("nutricion") || textAll.includes("sangre") || textAll.includes("complementario") || textAll.includes("mujer");
+      default:
+        return true;
+    }
+  }
+
+  function filtrarEfectores() {
     const texto = state.texto.trim().toLowerCase();
     const res = EFECTORES.filter((r) => {
-      if (state.categoria && r.categoria !== state.categoria) return false;
-      if (state.subcategoria && r.subcategoria !== state.subcategoria) return false;
+      if (!cumpleCategoria(r, state.categoria)) return false;
       if (state.municipio && r.partido !== state.municipio) return false;
       if (texto) {
-        const hay = [r.nombre, r.domicilio, r.subcategoria, r.categoria, r.partido].join(" ").toLowerCase();
-        if (!hay.includes(texto)) return false;
+        const busqueda = [r.nombre, r.domicilio, r.partido, r.categoria, r.subcategoria].join(" ").toLowerCase();
+        if (!busqueda.includes(texto)) return false;
       }
       return true;
     });
 
-    // ordenar por distancia si hay ubicación
+    // Ordenamiento: si hay ubicación, por cercanía; si no, alfabético (Página 6)
     if (state.ubicacion) {
       res.forEach((r) => {
-        if (r.lat != null) r._dist = haversineKm(state.ubicacion.lat, state.ubicacion.lon, r.lat, r.lon);
-        else r._dist = Infinity;
-      });
-      res.sort((a, b) => a._dist - b._dist);
-    } else {
-      res.sort((a, b) => a.partido.localeCompare(b.partido) || a.nombre.localeCompare(b.nombre));
-    }
-
-    limpiarMarcadores();
-    res.forEach((r) => {
-      if (r.lat == null) return;
-      const color = colorFor(r);
-      const marker = L.circleMarker([r.lat, r.lon], {
-        radius: 7,
-        color: "#0d1420",
-        weight: 1.5,
-        fillColor: color,
-        fillOpacity: 0.85,
-      }).addTo(map);
-      marker.bindPopup(construirPopup(r));
-      marcadores.push({ efector: r, marker });
-    });
-
-    if (res.length) {
-      const puntos = marcadores.map((m) => [m.efector.lat, m.efector.lon]);
-      map.fitBounds(L.latLngBounds(puntos).pad(0.15), { maxZoom: 13 });
-    }
-
-    renderLista(res);
-    $("stat-visibles").textContent = res.length;
-    $("badge-resultados").textContent = res.length;
-  }
-
-  function renderLista(res) {
-    const cont = $("lista-resultados");
-    if (!res.length) {
-      cont.innerHTML = "";
-      const div = document.createElement("div");
-      div.id = "placeholder-resultados";
-      div.className = "text-sm text-base-content/50 p-4 text-center";
-      div.textContent = "No hay resultados para los filtros seleccionados.";
-      cont.appendChild(div);
-      return;
-    }
-    cont.innerHTML = "";
-    res.forEach((r, idx) => {
-      const li = document.createElement("div");
-      li.className = "w-full text-left rounded-box border border-base-300 bg-base-100 hover:bg-base-300 transition p-3 cursor-pointer";
-      const color = colorFor(r);
-      const dist = r._dist != null && isFinite(r._dist) ? `<span class="badge badge-sm badge-secondary">${r._dist < 1 ? (r._dist * 1000).toFixed(0) + " m" : r._dist.toFixed(1) + " km"}</span>` : "";
-      li.innerHTML = `
-        <div class="flex items-start gap-2">
-          <span class="mt-1 h-3 w-3 rounded-full shrink-0" style="background:${color}"></span>
-          <div class="flex-1 min-w-0">
-            <div class="font-semibold text-sm leading-snug">${esc(r.nombre)}</div>
-            <div class="text-xs text-base-content/60 truncate">${esc(r.domicilio)}</div>
-            <div class="text-xs text-base-content/60">${esc(r.partido)}${r.nivel ? " · " + esc(r.nivel) : ""}</div>
-          </div>
-          <div class="shrink-0 flex flex-col items-end gap-1">${dist}</div>
-        </div>
-        <div class="mt-2.5 pt-2 border-t border-base-200">
-          <button type="button" class="btn-lista-ruteo btn-como-llegar-item">
-            <span>🚌</span> Cómo llegar en colectivo
-          </button>
-        </div>`;
-      li.querySelector(".btn-como-llegar-item").addEventListener("click", (e) => {
-        e.stopPropagation();
-        mostrarComoLlegar(r);
-      });
-      li.addEventListener("click", () => {
-        const m = marcadores[idx];
-        if (m) {
-          map.setView([m.efector.lat, m.efector.lon], 15);
-          m.marker.openPopup();
+        if (r.lat != null && r.lon != null) {
+          r._dist = haversineKm(state.ubicacion.lat, state.ubicacion.lon, r.lat, r.lon);
+        } else {
+          r._dist = Infinity;
         }
       });
-      cont.appendChild(li);
+      res.sort((a, b) => a._dist - b._dist);
+      $("sidebar-orden-label").textContent = "Orden: por cercanía (GPS)";
+    } else {
+      res.forEach((r) => { delete r._dist; });
+      res.sort((a, b) => a.partido.localeCompare(b.partido) || a.nombre.localeCompare(b.nombre));
+      $("sidebar-orden-label").textContent = "Orden: alfabético";
+    }
+
+    renderResultados(res);
+    actualizarMarcadoresMapa(res);
+  }
+
+  // ---------------------------------------------------------------- Render de Resultados
+  function renderResultados(lista) {
+    const listSidebar = $("sidebar-results-list");
+    const listMobile = $("mobile-results-list");
+    const countEl = $("sidebar-count");
+    const countMobile = $("mobile-sheet-count");
+
+    const totalText = `${lista.length} ${lista.length === 1 ? "establecimiento" : "establecimientos"}`;
+    if (countEl) countEl.textContent = totalText;
+    if (countMobile) countMobile.textContent = totalText;
+
+    if (!lista.length) {
+      const emptyHtml = `
+        <div style="padding: 32px 16px; text-align: center; color: var(--muted);">
+          <div style="font-size: 2rem; margin-bottom: 8px;">🔍</div>
+          <div style="font-weight: 600; color: var(--ink); font-size: 1rem; margin-bottom: 4px;">
+            No encontramos establecimientos con esta búsqueda
+          </div>
+          <p style="font-size: 0.85rem; margin-bottom: 16px;">
+            Probá quitando filtros o buscando por otro término.
+          </p>
+          <button type="button" class="button button--secondary" onclick="window.limpiarTodosFiltros()" style="min-height: 38px; font-size: 0.85rem; padding: 6px 14px;">
+            Limpiar filtros
+          </button>
+        </div>
+      `;
+      if (listSidebar) listSidebar.innerHTML = emptyHtml;
+      if (listMobile) listMobile.innerHTML = emptyHtml;
+      return;
+    }
+
+    const renderCard = (r, idx) => {
+      const isHospital = esHospital(r);
+      const isFav = state.favoritos.includes(r.nombre);
+      const distBadge = r._dist != null && isFinite(r._dist) ? `<span class="result-distance">${formatDistancia(r._dist)}</span> · ` : "";
+      const horarioText = "Horario no informado"; // Criterio estricto Página 8
+
+      const item = document.createElement("button");
+      item.type = "button";
+      item.className = "result-card-item";
+      item.setAttribute("role", "article");
+      item.setAttribute("aria-label", `${r.nombre}, en ${r.partido}`);
+      if (state.efectorSeleccionado && state.efectorSeleccionado.nombre === r.nombre) {
+        item.classList.add("active");
+      }
+
+      item.innerHTML = `
+        <div style="display: flex; align-items: flex-start; gap: var(--space-3); width: 100%;">
+          <div class="result-icon-badge ${isHospital ? "hospital" : "caps"}" aria-hidden="true">
+            ${isHospital ? "🏥" : "🏠"}
+          </div>
+          <div class="result-info">
+            <div class="result-title">${esc(r.nombre)}</div>
+            <div class="result-meta-row">
+              ${distBadge}<span>${esc(r.partido)}</span>
+            </div>
+            <div class="result-hours">${esc(r.domicilio)} · ${esc(horarioText)}</div>
+          </div>
+          <div class="result-actions-wrap">
+            <button type="button" class="fav-toggle-btn ${isFav ? "saved" : ""}" data-fav-name="${esc(r.nombre)}" title="${isFav ? "Quitar de favoritos" : "Guardar en favoritos"}" aria-label="${isFav ? "Quitar de favoritos" : "Guardar en favoritos"}" aria-pressed="${isFav}">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="${isFav ? "currentColor" : "none"}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+            </button>
+            <span class="chevron-icon" aria-hidden="true">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+            </span>
+          </div>
+        </div>
+        <div style="display: flex; gap: 8px; width: 100%; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line);">
+          <button type="button" class="button button--secondary btn-card-llegar" style="flex: 1; min-height: 32px; padding: 4px 8px; font-size: 0.775rem;">
+            🚌 Cómo llegar
+          </button>
+          <button type="button" class="button button--ghost btn-card-ver" style="min-height: 32px; padding: 4px 8px; font-size: 0.775rem; color: var(--action);">
+            Ver ficha
+          </button>
+        </div>
+      `;
+
+      // Clic en el botón de favorito sin propagar
+      const favBtn = item.querySelector(".fav-toggle-btn");
+      favBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        toggleFavorito(r.nombre);
+      });
+
+      // Clic en Cómo llegar desde la tarjeta
+      item.querySelector(".btn-card-llegar").addEventListener("click", (e) => {
+        e.stopPropagation();
+        mostrarComoLlegar(r, "mapa");
+      });
+
+      // Clic en Ver ficha
+      item.querySelector(".btn-card-ver").addEventListener("click", (e) => {
+        e.stopPropagation();
+        abrirFicha(r);
+      });
+
+      // Clic en la fila completa
+      item.addEventListener("click", () => {
+        abrirFicha(r);
+      });
+
+      return item;
+    };
+
+    if (listSidebar) {
+      listSidebar.innerHTML = "";
+      lista.forEach((r, idx) => listSidebar.appendChild(renderCard(r, idx)));
+    }
+    if (listMobile) {
+      listMobile.innerHTML = "";
+      lista.forEach((r, idx) => listMobile.appendChild(renderCard(r, idx)));
+    }
+  }
+
+  function actualizarMarcadoresMapa(lista) {
+    if (!map) return;
+    limpiarMarcadores();
+
+    const puntos = [];
+    lista.forEach((r) => {
+      if (r.lat == null || r.lon == null) return;
+      const marker = L.marker([r.lat, r.lon], {
+        icon: getIconForEfector(r, state.efectorSeleccionado?.nombre === r.nombre)
+      }).addTo(map);
+
+      marker.bindPopup(construirPopup(r));
+
+      marker.on("click", () => {
+        state.efectorSeleccionado = r;
+        // Resaltar la fila en el sidebar
+        resaltarFilaEnLista(r.nombre);
+      });
+
+      marcadores.push({ efector: r, marker });
+      puntos.push([r.lat, r.lon]);
+    });
+
+    if (puntos.length > 0 && !state.efectorSeleccionado) {
+      map.fitBounds(L.latLngBounds(puntos).pad(0.12), { maxZoom: 14 });
+    }
+  }
+
+  function resaltarFilaEnLista(nombre) {
+    const rows = document.querySelectorAll(".result-card-item");
+    rows.forEach((row) => {
+      const match = row.getAttribute("aria-label")?.startsWith(nombre);
+      if (match) {
+        row.classList.add("active");
+        row.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      } else {
+        row.classList.remove("active");
+      }
     });
   }
 
-  // ---------------------------------------------------------------- ruteo en transporte público
+  // ---------------------------------------------------------------- Ficha de Establecimiento (Página 7)
+  function abrirFicha(r) {
+    state.efectorSeleccionado = r;
+    const isHospital = esHospital(r);
+    const isFav = state.favoritos.includes(r.nombre);
+
+    // Guardar posición de scroll previa si estábamos en mapa
+    const listEl = $("sidebar-results-list");
+    if (listEl) state.scrollPrevioResultados = listEl.scrollTop;
+
+    // Actualizar campos de la Ficha
+    $("ficha-nombre").textContent = r.nombre;
+    $("ficha-partido-subtitle").textContent = `${r.partido} · Región Sanitaria VII`;
+    $("ficha-domicilio").textContent = r.domicilio || "Dirección no especificada";
+
+    const distWrap = $("ficha-distancia-wrap");
+    if (r._dist != null && isFinite(r._dist)) {
+      distWrap.textContent = `📍 A ${formatDistancia(r._dist)} de tu ubicación`;
+      distWrap.style.display = "block";
+    } else {
+      distWrap.style.display = "none";
+    }
+
+    const telEl = $("ficha-telefono");
+    if (r.telefono && r.telefono !== "-" && r.telefono.trim().length > 2) {
+      telEl.innerHTML = `<a href="tel:${esc(r.telefono.replace(/[^\d+]/g, ""))}" style="font-weight: 600;">📞 ${esc(r.telefono)}</a>`;
+    } else {
+      telEl.innerHTML = `<span style="color: var(--muted);">Teléfono no informado</span>`;
+    }
+
+    $("ficha-horario").textContent = "Horario no informado"; // Criterio estricto Página 8
+
+    // Badge de categoría
+    const badgeCat = $("ficha-badge-cat");
+    if (badgeCat) {
+      badgeCat.innerHTML = isHospital
+        ? `<span class="badge-hospital">Hospital · ${esc(r.nivel || "Segundo Nivel")}</span>`
+        : `<span class="badge-caps">CAPS · Primer nivel</span>`;
+    }
+
+    // Lista de servicios con tildes verdes (Página 7)
+    const servList = $("ficha-servicios-list");
+    const serviciosBase = isHospital
+      ? [
+          "Guardia y emergencias 24 hs",
+          "Clínica médica e internación",
+          "Pediatría y neonatología",
+          "Cirugía y traumatología",
+          "Laboratorio y diagnóstico por imágenes",
+          "Maternidad y salud reproductiva",
+          "Farmacia hospitalaria gratuita"
+        ]
+      : [
+          "Medicina general y atención primaria",
+          "Control pediátrico y de la niñez",
+          "Vacunatorio oficial de calendario",
+          "Enfermería y curaciones",
+          "Salud sexual y reproductiva",
+          "Entrega de medicamentos esenciales",
+          "Salud comunitaria y territorial"
+        ];
+
+    servList.innerHTML = serviciosBase
+      .map(
+        (s) => `
+      <div class="service-check-item">
+        <span class="service-check-icon">✓</span>
+        <span>${esc(s)}</span>
+      </div>`
+      )
+      .join("");
+
+    // Botón de Favorito en Ficha
+    actualizarBotonFavoritoFicha(isFav);
+
+    // Botón "Cómo llegar" en Ficha
+    const btnLlegar = $("btn-ficha-como-llegar");
+    btnLlegar.onclick = () => {
+      mostrarComoLlegar(r);
+    };
+
+    // Cambiar a la vista de ficha
+    activarVista("ficha");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+
+    // Centrar marcador en mapa de fondo
+    const m = marcadores.find((item) => item.efector.nombre === r.nombre);
+    if (m && map) {
+      map.setView([r.lat, r.lon], 15);
+      m.marker.openPopup();
+    }
+  }
+
+  function actualizarBotonFavoritoFicha(isFav) {
+    const btnFav = $("btn-ficha-favorito");
+    const favText = $("ficha-fav-text");
+    const favIcon = $("ficha-fav-icon");
+    if (!btnFav) return;
+
+    if (isFav) {
+      favText.textContent = "Quitar de favoritos";
+      btnFav.classList.add("saved");
+      favIcon.setAttribute("fill", "#ef4444");
+      favIcon.style.color = "#ef4444";
+    } else {
+      favText.textContent = "Guardar en favoritos";
+      btnFav.classList.remove("saved");
+      favIcon.setAttribute("fill", "none");
+      favIcon.style.color = "var(--action)";
+    }
+
+    btnFav.onclick = () => {
+      if (state.efectorSeleccionado) {
+        toggleFavorito(state.efectorSeleccionado.nombre);
+        const nuevoEstado = state.favoritos.includes(state.efectorSeleccionado.nombre);
+        actualizarBotonFavoritoFicha(nuevoEstado);
+      }
+    };
+  }
+
+  // ---------------------------------------------------------------- Favoritos
+  function toggleFavorito(nombreEfector) {
+    const index = state.favoritos.indexOf(nombreEfector);
+    if (index >= 0) {
+      state.favoritos.splice(index, 1);
+      state.ultimoEliminadoFav = nombreEfector;
+      guardarFavoritosStorage();
+      mostrarToast(`Eliminado de favoritos`, true, () => {
+        if (state.ultimoEliminadoFav) {
+          state.favoritos.push(state.ultimoEliminadoFav);
+          guardarFavoritosStorage();
+          mostrarToast(`Restaurado a favoritos`);
+          if (state.vistaActual === "favoritos") renderPantallaFavoritos();
+          filtrarEfectores();
+        }
+      });
+    } else {
+      state.favoritos.push(nombreEfector);
+      state.ultimoEliminadoFav = null;
+      guardarFavoritosStorage();
+      mostrarToast(`Guardado en favoritos`);
+    }
+
+    if (state.vistaActual === "favoritos") {
+      renderPantallaFavoritos();
+    }
+    // Actualizar iconos de la lista
+    const favButtons = document.querySelectorAll(`[data-fav-name="${CSS.escape(nombreEfector)}"]`);
+    const isNowFav = state.favoritos.includes(nombreEfector);
+    favButtons.forEach((btn) => {
+      btn.classList.toggle("saved", isNowFav);
+      btn.setAttribute("aria-pressed", isNowFav);
+      const svg = btn.querySelector("svg");
+      if (svg) svg.setAttribute("fill", isNowFav ? "currentColor" : "none");
+    });
+  }
+
+  function renderPantallaFavoritos() {
+    const container = $("favoritos-list-container");
+    if (!container) return;
+
+    const centrosFav = EFECTORES.filter((r) => state.favoritos.includes(r.nombre));
+
+    if (!centrosFav.length) {
+      container.innerHTML = `
+        <div class="empty-favorites-box">
+          <svg class="empty-fav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+          </svg>
+          <div class="empty-fav-text">Todavía no guardaste establecimientos</div>
+          <p style="font-size: 0.9rem; color: var(--muted); max-width: 380px;">
+            Hacé clic en el corazón de cualquier centro de salud para guardarlo acá y acceder más rápido.
+          </p>
+          <button type="button" class="button button--primary" onclick="window.irABuscar()" style="min-height: 44px; margin-top: 8px;">
+            Buscar servicios
+          </button>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = "";
+    centrosFav.forEach((r) => {
+      const isHospital = esHospital(r);
+      const distBadge = r._dist != null && isFinite(r._dist) ? `<span class="result-distance">${formatDistancia(r._dist)}</span> · ` : "";
+
+      const card = document.createElement("div");
+      card.className = "result-card-item";
+      card.style.border = "1px solid var(--line)";
+      card.style.borderRadius = "var(--radius-card)";
+      card.style.marginBottom = "8px";
+
+      card.innerHTML = `
+        <div class="result-icon-badge ${isHospital ? "hospital" : "caps"}" aria-hidden="true">
+          ${isHospital ? "🏥" : "🏠"}
+        </div>
+        <div class="result-info">
+          <div class="result-title">${esc(r.nombre)}</div>
+          <div class="result-meta-row">
+            ${distBadge}<span>${esc(r.partido)}</span> · <span>${esc(r.domicilio)}</span>
+          </div>
+        </div>
+        <div class="result-actions-wrap">
+          <button type="button" class="fav-toggle-btn saved" data-fav-name="${esc(r.nombre)}" title="Quitar de favoritos" aria-label="Quitar de favoritos">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+          </button>
+          <button type="button" class="button button--ghost" style="padding: 4px 8px; font-size: 0.85rem; color: var(--action);">
+            Ver detalle
+          </button>
+        </div>
+      `;
+
+      card.querySelector(".fav-toggle-btn").addEventListener("click", (e) => {
+        e.stopPropagation();
+        toggleFavorito(r.nombre);
+      });
+
+      card.addEventListener("click", () => {
+        abrirFicha(r);
+      });
+
+      container.appendChild(card);
+    });
+  }
+
+  // ---------------------------------------------------------------- Navegación y Vistas (SPA)
+  function activarVista(vista) {
+    state.vistaPrevia = state.vistaActual;
+    state.vistaActual = vista;
+
+    const vistas = ["inicio", "mapa", "ficha", "favoritos", "info"];
+    vistas.forEach((v) => {
+      const el = $(`view-${v}`);
+      if (el) el.classList.toggle("hidden", v !== vista);
+    });
+
+    // Actualizar botones del header
+    $("btn-nav-inicio")?.classList.toggle("active", vista === "inicio");
+    $("btn-nav-mapa")?.classList.toggle("active", vista === "mapa");
+    $("btn-nav-favoritos")?.classList.toggle("active", vista === "favoritos");
+    $("btn-nav-info")?.classList.toggle("active", vista === "info");
+
+    // Actualizar botones de navegación móvil inferior
+    $("btn-bottom-inicio")?.classList.toggle("active", vista === "inicio");
+    $("btn-bottom-mapa")?.classList.toggle("active", vista === "mapa");
+    $("btn-bottom-buscar")?.classList.toggle("active", vista === "mapa" && state.texto !== "");
+    $("btn-bottom-favoritos")?.classList.toggle("active", vista === "favoritos");
+
+    // Drawer links
+    $("drawer-link-inicio")?.classList.toggle("active", vista === "inicio");
+    $("drawer-link-mapa")?.classList.toggle("active", vista === "mapa");
+    $("drawer-link-favoritos")?.classList.toggle("active", vista === "favoritos");
+    $("drawer-link-info")?.classList.toggle("active", vista === "info");
+
+    // Si pasamos al mapa, redimensionar Leaflet
+    if (vista === "mapa") {
+      setTimeout(() => {
+        if (!map) initMap();
+        map.invalidateSize();
+        filtrarEfectores();
+        // Restaurar scroll de resultados
+        const listEl = $("sidebar-results-list");
+        if (listEl && state.scrollPrevioResultados > 0) {
+          listEl.scrollTop = state.scrollPrevioResultados;
+        }
+      }, 50);
+    }
+
+    if (vista === "favoritos") {
+      renderPantallaFavoritos();
+    }
+
+    cerrarDrawer();
+  }
+
+  // ---------------------------------------------------------------- Geolocalización
+  function solicitarGeolocalizacion() {
+    const labelStatus = $("label-gps-status");
+    if (!navigator.geolocation) {
+      if (labelStatus) labelStatus.textContent = "Geolocalización no soportada en este navegador.";
+      mostrarToast("Tu navegador no soporta geolocalización");
+      return;
+    }
+
+    if (labelStatus) labelStatus.textContent = "Obteniendo ubicación GPS…";
+    mostrarToast("Obteniendo tu ubicación GPS…");
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords;
+        fijarUbicacionUsuario(latitude, longitude, "Tu ubicación (GPS)");
+        if (labelStatus) labelStatus.textContent = "📍 Ubicación detectada";
+        mostrarToast("Ubicación obtenida correctamente");
+      },
+      (err) => {
+        console.warn("Error GPS:", err);
+        if (labelStatus) labelStatus.textContent = "Podés buscar por nombre o dirección";
+        mostrarToast("No pudimos obtener tu ubicación GPS");
+      },
+      { timeout: 10000, enableHighAccuracy: true }
+    );
+  }
+
+  function fijarUbicacionUsuario(lat, lon, label = "Tu ubicación") {
+    state.ubicacion = { lat, lon, label };
+
+    if (!map) initMap();
+
+    if (userMarker) {
+      userMarker.setLatLng([lat, lon]);
+    } else {
+      userMarker = L.marker([lat, lon], {
+        icon: L.divIcon({
+          className: "user-location-pin-wrap",
+          html: `<div class="user-location-pin" title="${esc(label)}"></div>`,
+          iconSize: [22, 22],
+          iconAnchor: [11, 11]
+        })
+      }).addTo(map);
+      userMarker.bindPopup(`<strong>📍 ${esc(label)}</strong>`);
+    }
+
+    const legendUser = $("legend-user-item");
+    if (legendUser) legendUser.style.display = "flex";
+
+    filtrarEfectores();
+  }
+
+  // ---------------------------------------------------------------- Asistente Cómo Llegar en Colectivo (Modal)
   function obtenerMunicipioCercano(lat, lon) {
-    if (!MUNICIPIOS.length) return "";
+    if (!MUNICIPIOS.length) return "Hurlingham";
     let minD = Infinity;
     let cer = MUNICIPIOS[0].nombre;
     MUNICIPIOS.forEach((m) => {
       const d = haversineKm(lat, lon, m.lat, m.lon);
-      if (d < minD) { minD = d; cer = m.nombre; }
+      if (d < minD) {
+        minD = d;
+        cer = m.nombre;
+      }
     });
     return cer;
   }
 
-  async function mostrarComoLlegar(r) {
-    if (!state.ubicacion) {
-      $("label-ubicacion").textContent = "⚠️ Indicá tu ubicación (GPS, dirección o clic en el mapa) para calcular el colectivo.";
-      $("input-ubicacion").focus();
-      alert("Para calcular las líneas de colectivo y el trayecto a este efector, primero indicá tu ubicación en el buscador o haciendo clic en el mapa.");
-      return;
+  async function mostrarComoLlegar(r, origenTrigger = "ficha") {
+    state.origenRuteo = origenTrigger;
+    state.efectorSeleccionado = r;
+
+    // 1. Pasar inmediatamente a la vista de Mapa para que el usuario VEA el mapa con el trayecto
+    activarVista("mapa");
+
+    // 2. Ocultar panel de filtros y mostrar panel de ruteo en el sidebar (escritorio) y sheet (móvil)
+    const panelFiltros = $("sidebar-panel-filtros");
+    const panelRuteo = $("sidebar-panel-ruteo");
+    const ruteoContenido = $("ruteo-contenido-sidebar");
+    const mobileResultsList = $("mobile-results-list");
+    const mobileRuteoContainer = $("mobile-ruteo-container");
+    const btnVolverLabel = $("btn-ruteo-volver-label");
+    const ruteoSubtitulo = $("ruteo-trayecto-subtitulo");
+
+    if (panelFiltros) panelFiltros.classList.add("hidden");
+    if (panelRuteo) panelRuteo.classList.remove("hidden");
+    if (mobileResultsList) mobileResultsList.classList.add("hidden");
+    if (mobileRuteoContainer) mobileRuteoContainer.classList.remove("hidden");
+
+    if (btnVolverLabel) {
+      btnVolverLabel.textContent = origenTrigger === "ficha" ? "Volver a la ficha del centro" : "Volver a resultados";
     }
 
-    // Cerrar el popup sobre el marcador del centro médico para que no tape la traza en el mapa
-    map.closePopup();
+    // 3. Determinar origen (GPS si existe, o centroide de Hurlingham/partido cercano)
+    let origenLat, origenLon, origenNombre;
+    if (state.ubicacion) {
+      origenLat = state.ubicacion.lat;
+      origenLon = state.ubicacion.lon;
+      origenNombre = state.ubicacion.label;
+    } else {
+      const muniDef = MUNICIPIOS.find((m) => m.nombre === "Hurlingham") || MUNICIPIOS[0];
+      origenLat = muniDef ? muniDef.lat : -34.59;
+      origenLon = muniDef ? muniDef.lon : -58.63;
+      origenNombre = "Hurlingham (Origen sugerido)";
+    }
 
-    const origenPartido = obtenerMunicipioCercano(state.ubicacion.lat, state.ubicacion.lon);
+    const origenPartido = obtenerMunicipioCercano(origenLat, origenLon);
     const destinoPartido = r.partido;
+    const esMismoPartido = origenPartido === destinoPartido;
 
-    // Obtener traza real sobre calles y avenidas por donde circulan los colectivos (OSRM)
+    if (ruteoSubtitulo) {
+      ruteoSubtitulo.textContent = `${origenPartido} ➔ ${r.nombre} (${destinoPartido})`;
+    }
+
+    // 4. Calcular traza real sobre calles con OSRM
+    let distKm = haversineKm(origenLat, origenLon, r.lat, r.lon);
     let rutaCoords = [
-      [state.ubicacion.lat, state.ubicacion.lon],
+      [origenLat, origenLon],
       [r.lat, r.lon]
     ];
-    let distKm = haversineKm(state.ubicacion.lat, state.ubicacion.lon, r.lat, r.lon);
 
     try {
-      const url = `https://router.project-osrm.org/route/v1/driving/${state.ubicacion.lon},${state.ubicacion.lat};${r.lon},${r.lat}?overview=full&geometries=geojson`;
+      const url = `https://router.project-osrm.org/route/v1/driving/${origenLon},${origenLat};${r.lon},${r.lat}?overview=full&geometries=geojson`;
       const resp = await fetch(url);
       if (resp.ok) {
         const data = await resp.json();
-        if (data && data.routes && data.routes.length > 0) {
-          const route = data.routes[0];
-          rutaCoords = route.geometry.coordinates.map((c) => [c[1], c[0]]);
-          distKm = route.distance / 1000;
+        if (data?.routes?.[0]) {
+          rutaCoords = data.routes[0].geometry.coordinates.map((c) => [c[1], c[0]]);
+          distKm = data.routes[0].distance / 1000;
         }
       }
     } catch (e) {
-      console.warn("No se pudo obtener traza detallada de calles, usando traza directa:", e);
+      console.warn("OSRM fallback directo:", e);
     }
 
-    // Dibujar línea visual en mapa con el recorrido real por calles
-    if (state.lineaRutaMapa) map.removeLayer(state.lineaRutaMapa);
-    state.lineaRutaMapa = L.polyline(rutaCoords, {
-      color: "#38bdf8",
-      weight: 5,
-      opacity: 0.95,
-      lineCap: "round",
-      lineJoin: "round"
-    }).addTo(map);
+    // 5. Dibujar traza en el mapa Leaflet con color cian institucional de alto contraste
+    if (map) {
+      if (lineaRutaMapa) map.removeLayer(lineaRutaMapa);
+      lineaRutaMapa = L.polyline(rutaCoords, {
+        color: "#08a2c4",
+        weight: 6,
+        opacity: 0.95,
+        lineCap: "round",
+        lineJoin: "round"
+      }).addTo(map);
 
-    // Ajustar encuadre con margen suficiente para que ambos puntos y el trayecto completo sean visibles
-    map.fitBounds(state.lineaRutaMapa.getBounds().pad(0.35));
+      // Ajustar encuadre del mapa para que el usuario vea TODO el recorrido trazado
+      map.fitBounds(lineaRutaMapa.getBounds().pad(0.25));
 
-    // Obtener líneas locales e interurbanas
+      // Abrir popup en el destino
+      const m = marcadores.find((item) => item.efector.nombre === r.nombre);
+      if (m) m.marker.openPopup();
+    }
+
+    const distTexto = formatDistancia(distKm);
+    const tiempoEst = Math.max(10, Math.round(12 + (distKm / 18) * 60));
+
+    // 6. Líneas de colectivos
     const lineasDestino = COLECTIVOS.lineas_por_partido[destinoPartido] || [];
-    const lineasOrigen = COLECTIVOS.lineas_por_partido[origenPartido] || [];
-    const interurbanas = (COLECTIVOS.conexiones_interurbanas || []).filter((c) =>
-      (c.origen === origenPartido && c.destino === destinoPartido) ||
-      (c.origen === destinoPartido && c.destino === origenPartido)
+    const interurbanas = (COLECTIVOS.conexiones_interurbanas || []).filter(
+      (c) => (c.origen === origenPartido && c.destino === destinoPartido) || (c.origen === destinoPartido && c.destino === origenPartido)
     );
 
-    const esMismoPartido = origenPartido === destinoPartido;
-    const distTexto = distKm < 1 ? (distKm * 1000).toFixed(0) + " metros" : distKm.toFixed(1) + " km";
-    const tiempoEst = Math.max(8, Math.round(10 + (distKm / 18) * 60));
-
-    $("modal-ruteo-subtitulo").innerHTML = `
-      <span class="text-emerald-400 font-semibold">${esc(origenPartido)}</span>
-      <span class="text-slate-500 mx-1.5">➔</span>
-      <span class="text-sky-300 font-bold">${esc(r.nombre)}</span>
-      <span class="text-slate-400">(${esc(destinoPartido)})</span>`;
-
-    // Itinerario detallado paso a paso con los colectivos específicos para la ruta
-    let pasosHtml = "";
-    if (esMismoPartido) {
-      const lineaPrincipal = lineasDestino[0]?.linea || "local";
-      const ramalPrincipal = lineasDestino[0]?.ramales || `recorrido por ${destinoPartido}`;
-      const lineasAlt = lineasDestino.slice(1, 3).map((l) => `Línea ${l.linea}`).join(" o ");
-
-      pasosHtml = `
-        <li class="flex items-start gap-2.5">
-          <span class="h-5 w-5 rounded-full bg-emerald-500/20 text-emerald-400 font-bold flex items-center justify-center text-[11px] shrink-0">1</span>
-          <div>
-            <strong class="text-white">Punto de partida:</strong> Caminá hacia la parada o avenida más próxima desde tu ubicación en <span class="text-emerald-400 font-semibold">${esc(origenPartido)}</span>.
+    let colectivosHtml = "";
+    if (lineasDestino.length > 0) {
+      colectivosHtml = `
+        <div style="background-color: var(--surface-soft); padding: 12px; border-radius: var(--radius-control); border: 1px solid var(--line);">
+          <strong style="font-size: 0.85rem; color: var(--ink);">Líneas de colectivo en ${esc(destinoPartido)}:</strong>
+          <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px;">
+            ${lineasDestino
+              .map(
+                (l) => `
+              <span class="badge-caps" style="padding: 4px 10px; font-size: 0.8rem;" title="${esc(l.ramales)}">
+                🚌 Línea ${esc(l.linea)}
+              </span>`
+              )
+              .join("")}
           </div>
-        </li>
-        <li class="flex items-start gap-2.5">
-          <span class="h-5 w-5 rounded-full bg-sky-500/20 text-sky-400 font-bold flex items-center justify-center text-[11px] shrink-0">2</span>
-          <div>
-            <strong class="text-white">Tomar colectivo:</strong> Abordá la <span class="badge bg-emerald-500/20 text-emerald-300 font-bold px-2 py-0.5 rounded text-xs">Línea ${esc(lineaPrincipal)}</span> ${lineasAlt ? `(o alternativamente <span class="text-slate-300 font-medium">${esc(lineasAlt)}</span>)` : ""} en dirección a <em>${esc(ramalPrincipal)}</em>.
-          </div>
-        </li>
-        <li class="flex items-start gap-2.5">
-          <span class="h-5 w-5 rounded-full bg-amber-500/20 text-amber-400 font-bold flex items-center justify-center text-[11px] shrink-0">3</span>
-          <div>
-            <strong class="text-white">Dónde bajarse:</strong> Descendé en la parada más cercana a la altura de <span class="text-slate-200 font-medium">${esc(r.domicilio)}</span>.
-          </div>
-        </li>
-        <li class="flex items-start gap-2.5">
-          <span class="h-5 w-5 rounded-full bg-purple-500/20 text-purple-400 font-bold flex items-center justify-center text-[11px] shrink-0">4</span>
-          <div>
-            <strong class="text-white">Llegada al efector:</strong> Caminá el último tramo hasta la entrada de <span class="text-white font-bold">${esc(r.nombre)}</span> (${distTexto} de trayecto total).
-          </div>
-        </li>`;
-    } else {
-      const lineasInter = interurbanas.flatMap((c) => c.lineas);
-      if (lineasInter.length > 0) {
-        const lineaDirecta = lineasInter[0];
-        const lineaLocalDest = lineasDestino[0]?.linea;
-        pasosHtml = `
-          <li class="flex items-start gap-2.5">
-            <span class="h-5 w-5 rounded-full bg-emerald-500/20 text-emerald-400 font-bold flex items-center justify-center text-[11px] shrink-0">1</span>
-            <div>
-              <strong class="text-white">Inicio en ${esc(origenPartido)}:</strong> Acercate a la parada de la traza interurbana o estación más cercana en <span class="text-emerald-400 font-semibold">${esc(origenPartido)}</span>.
-            </div>
-          </li>
-          <li class="flex items-start gap-2.5">
-            <span class="h-5 w-5 rounded-full bg-sky-500/20 text-sky-400 font-bold flex items-center justify-center text-[11px] shrink-0">2</span>
-            <div>
-              <strong class="text-white">Colectivo interurbano directo:</strong> Tomá la <span class="badge bg-amber-500/20 text-amber-300 font-bold px-2 py-0.5 rounded text-xs">Línea ${esc(lineaDirecta)}</span> ${lineasInter.length > 1 ? `(o <span class="text-slate-300 font-medium">Línea ${esc(lineasInter[1])}</span>)` : ""} con destino hacia <span class="text-sky-300 font-semibold">${esc(destinoPartido)}</span>.
-            </div>
-          </li>
-          <li class="flex items-start gap-2.5">
-            <span class="h-5 w-5 rounded-full bg-amber-500/20 text-amber-400 font-bold flex items-center justify-center text-[11px] shrink-0">3</span>
-            <div>
-              <strong class="text-white">Ingreso y descenso en ${esc(destinoPartido)}:</strong> Seguí el trayecto marcado en el mapa hasta ${esc(destinoPartido)}. Bajate en la parada principal más próxima a <span class="text-slate-200">${esc(r.domicilio)}</span>.
-            </div>
-          </li>
-          ${lineaLocalDest ? `
-          <li class="flex items-start gap-2.5">
-            <span class="h-5 w-5 rounded-full bg-blue-500/20 text-blue-400 font-bold flex items-center justify-center text-[11px] shrink-0">4</span>
-            <div>
-              <strong class="text-white">Conexión local (opcional):</strong> Si el centro de salud no queda sobre la avenida, combiná con la <span class="badge bg-emerald-500/20 text-emerald-300 font-semibold px-2 py-0.5 rounded text-xs">Línea ${esc(lineaLocalDest)}</span> interna o caminá hacia el establecimiento.
-            </div>
-          </li>` : ""}
-          <li class="flex items-start gap-2.5">
-            <span class="h-5 w-5 rounded-full bg-purple-500/20 text-purple-400 font-bold flex items-center justify-center text-[11px] shrink-0">${lineaLocalDest ? "5" : "4"}</span>
-            <div>
-              <strong class="text-white">Llegada:</strong> Arribo a <span class="text-white font-bold">${esc(r.nombre)}</span> en <span class="text-slate-300">${esc(r.domicilio)}</span> (~${tiempoEst} min estimados de viaje).
-            </div>
-          </li>`;
-      } else {
-        const lineaSalida = lineasOrigen[0]?.linea || "local";
-        const lineaLlegada = lineasDestino[0]?.linea || "troncal";
-        pasosHtml = `
-          <li class="flex items-start gap-2.5">
-            <span class="h-5 w-5 rounded-full bg-emerald-500/20 text-emerald-400 font-bold flex items-center justify-center text-[11px] shrink-0">1</span>
-            <div>
-              <strong class="text-white">Salida desde ${esc(origenPartido)}:</strong> Tomá un colectivo de tu zona (ej. <span class="badge bg-slate-700 text-slate-200 font-bold px-2 py-0.5 rounded text-xs">Línea ${esc(lineaSalida)}</span>) hacia la estación de tren o centro de trasbordo más cercano.
-            </div>
-          </li>
-          <li class="flex items-start gap-2.5">
-            <span class="h-5 w-5 rounded-full bg-amber-500/20 text-amber-400 font-bold flex items-center justify-center text-[11px] shrink-0">2</span>
-            <div>
-              <strong class="text-white">Punto de trasbordo regional:</strong> En el nodo de trasbordo, combiná con la <span class="badge bg-amber-500/20 text-amber-300 font-bold px-2 py-0.5 rounded text-xs">Línea ${esc(lineaLlegada)}</span> con recorrido en dirección a <span class="text-sky-300 font-semibold">${esc(destinoPartido)}</span>.
-            </div>
-          </li>
-          <li class="flex items-start gap-2.5">
-            <span class="h-5 w-5 rounded-full bg-sky-500/20 text-sky-400 font-bold flex items-center justify-center text-[11px] shrink-0">3</span>
-            <div>
-              <strong class="text-white">Dónde bajarse en ${esc(destinoPartido)}:</strong> Descendé en la parada más cercana a la altura de <span class="text-slate-200">${esc(r.domicilio)}</span>.
-            </div>
-          </li>
-          <li class="flex items-start gap-2.5">
-            <span class="h-5 w-5 rounded-full bg-purple-500/20 text-purple-400 font-bold flex items-center justify-center text-[11px] shrink-0">4</span>
-            <div>
-              <strong class="text-white">Arribo final:</strong> Caminá el tramo restante hasta la entrada de <span class="text-white font-bold">${esc(r.nombre)}</span> (${distTexto} de viaje total).
-            </div>
-          </li>`;
-      }
+        </div>
+      `;
     }
 
-    let html = `
-      <!-- Métricas -->
-      <div class="grid grid-cols-3 gap-2 bg-base-100 rounded-xl p-3 text-center">
-        <div class="flex flex-col">
-          <span class="text-[11px] uppercase tracking-wider text-base-content/60 font-medium">Distancia</span>
-          <span class="text-sm sm:text-base font-bold text-emerald-400 mt-0.5">${distTexto}</span>
-        </div>
-        <div class="flex flex-col">
-          <span class="text-[11px] uppercase tracking-wider text-base-content/60 font-medium">Tiempo est.</span>
-          <span class="text-sm sm:text-base font-bold text-sky-400 mt-0.5">~${tiempoEst} min</span>
-        </div>
-        <div class="flex flex-col">
-          <span class="text-[11px] uppercase tracking-wider text-base-content/60 font-medium">Trayecto</span>
-          <span class="text-xs font-semibold text-white mt-1 truncate" title="${esc(origenPartido)} ➔ ${esc(destinoPartido)}">${esc(origenPartido)} ➔ ${esc(destinoPartido)}</span>
-        </div>
-      </div>`;
+    const gmapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${origenLat},${origenLon}&destination=${r.lat},${r.lon}&travelmode=transit`;
+    const moovitUrl = `https://moovitapp.com/?from=${origenLat},${origenLon}&to=${r.lat},${r.lon}`;
 
-    if (esMismoPartido) {
-      html += `
-        <div class="bg-base-100 rounded-xl p-4">
-          <h4 class="font-bold text-sm text-emerald-400 flex items-center gap-1.5 mb-1.5">
-            <span>✅ Colectivos locales en ${esc(destinoPartido)}</span>
-          </h4>
-          <p class="text-xs text-base-content/70 mb-3">
-            Líneas que recorren ${esc(destinoPartido)} y te acercan a <strong class="text-white">${esc(r.nombre)}</strong>:
-          </p>
-          <div class="flex flex-wrap gap-2">
-            ${lineasDestino.map((l) => `
-              <span class="inline-flex items-center gap-1.5 bg-emerald-500/15 text-emerald-300 font-semibold px-2.5 py-1.5 rounded-lg text-xs" title="${esc(l.ramales)}">
-                <span>🚌</span>
-                <span>Línea ${esc(l.linea)}</span>
-                <span class="text-[10px] text-emerald-400/80 font-normal">(${esc(l.tipo)})</span>
-              </span>`).join("")}
+    const ruteoInfoHtml = `
+      <div style="background-color: var(--selected); padding: 12px; border-radius: var(--radius-control); border: 1px solid var(--action);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+          <span style="font-size: 0.8rem; font-weight: 700; color: var(--action);">TRAYECTO EN MAPA</span>
+          <span style="font-size: 0.85rem; font-weight: 700; color: var(--ink);">${distTexto} · ~${tiempoEst} min</span>
+        </div>
+        <div style="font-size: 0.95rem; font-weight: 700; color: var(--ink);">
+          ${esc(origenPartido)} ➔ ${esc(r.nombre)}
+        </div>
+        <div style="font-size: 0.775rem; color: var(--muted); margin-top: 2px;">
+          Destino: ${esc(r.domicilio)} (${esc(destinoPartido)})
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <div class="ruteo-step-item">
+          <div class="ruteo-step-num">1</div>
+          <div>
+            <strong>Salida:</strong> Dirigite a la parada o avenida más cercana desde tu punto en <em>${esc(origenPartido)}</em>.
           </div>
-        </div>`;
-    } else {
-      const lineasInter = interurbanas.flatMap((c) => c.lineas);
-      html += `
-        <div class="bg-base-100 rounded-xl p-4">
-          <h4 class="font-bold text-sm text-amber-400 flex items-center gap-1.5 mb-1.5">
-            <span>🔄 Conexión Interurbana (${esc(origenPartido)} ➔ ${esc(destinoPartido)})</span>
-          </h4>
-          ${lineasInter.length ? `
-            <p class="text-xs text-base-content/70 mb-2">Líneas directas que conectan ambos municipios:</p>
-            <div class="flex flex-wrap gap-2 mb-3">
-              ${lineasInter.map((l) => `
-                <span class="inline-flex items-center gap-1.5 bg-amber-500/15 text-amber-300 font-semibold px-2.5 py-1.5 rounded-lg text-xs">
-                  <span>🚌</span>
-                  <span>Línea ${esc(l)}</span>
-                </span>`).join("")}
-            </div>
-          ` : `
-            <p class="text-xs text-base-content/70 mb-2">Tomá un colectivo troncal en ${esc(origenPartido)} hacia el centro de trasbordo más cercano (ej. Estaciones de Morón, Merlo o Moreno) para combinar con las líneas de ${esc(destinoPartido)}.</p>
-          `}
-
-          <h5 class="font-semibold text-xs text-base-content/80 mt-1 mb-1.5">Líneas locales en el municipio de destino (${esc(destinoPartido)}):</h5>
-          <div class="flex flex-wrap gap-1.5">
-            ${lineasDestino.map((l) => `
-              <span class="inline-flex items-center bg-base-300 text-base-content/90 text-xs px-2.5 py-1 rounded-md">
-                Línea ${esc(l.linea)}
-              </span>`).join("")}
+        </div>
+        <div class="ruteo-step-item">
+          <div class="ruteo-step-num">2</div>
+          <div>
+            <strong>Colectivo:</strong> Abordá una de las líneas que conectan con ${esc(destinoPartido)} (ver opciones abajo).
           </div>
-        </div>`;
-    }
+        </div>
+        <div class="ruteo-step-item">
+          <div class="ruteo-step-num">3</div>
+          <div>
+            <strong>Descenso:</strong> Bajate en la parada a la altura de <em>${esc(r.domicilio)}</em>.
+          </div>
+        </div>
+        <div class="ruteo-step-item">
+          <div class="ruteo-step-num">4</div>
+          <div>
+            <strong>Arribo:</strong> Ingreso al efector <strong>${esc(r.nombre)}</strong>.
+          </div>
+        </div>
+      </div>
 
-    html += `
-      <div class="bg-base-100 rounded-xl p-4">
-        <h4 class="font-bold text-xs uppercase tracking-wider text-base-content/70 mb-2.5 flex items-center gap-1.5">
-          <span>🗺️ Guía paso a paso del recorrido</span>
-        </h4>
-        <ol class="space-y-3 text-xs text-base-content/90">
-          ${pasosHtml}
-        </ol>
-      </div>`;
+      ${colectivosHtml}
 
-    $("modal-ruteo-contenido").innerHTML = html;
+      <div>
+        <strong style="font-size: 0.85rem; color: var(--ink);">Navegar en tiempo real:</strong>
+        <div class="ruteo-ext-buttons">
+          <a href="${gmapsUrl}" target="_blank" rel="noopener noreferrer" class="button button--secondary" style="font-size: 0.8rem; min-height: 38px; padding: 6px;">
+            Google Maps
+          </a>
+          <a href="${moovitUrl}" target="_blank" rel="noopener noreferrer" class="button button--secondary" style="font-size: 0.8rem; min-height: 38px; padding: 6px;">
+            Moovit
+          </a>
+        </div>
+      </div>
 
-    const gmapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${state.ubicacion.lat},${state.ubicacion.lon}&destination=${r.lat},${r.lon}&travelmode=transit`;
-    const moovitUrl = `https://moovitapp.com/index/es/transporte_p%C3%Bublico-site_search?orig_lat=${state.ubicacion.lat}&orig_lng=${state.ubicacion.lon}&dest_lat=${r.lat}&dest_lng=${r.lon}`;
+      <div style="margin-top: 4px;">
+        <button type="button" class="button button--primary" onclick="window.volverDesdeRuteo()" style="width: 100%; min-height: 42px; font-size: 0.875rem;">
+          ${origenTrigger === "ficha" ? "Volver a la ficha del centro" : "Volver a la lista de resultados"}
+        </button>
+      </div>
+    `;
 
-    $("btn-gmaps-transit").href = gmapsUrl;
-    $("btn-moovit").href = moovitUrl;
+    if (ruteoContenido) ruteoContenido.innerHTML = ruteoInfoHtml;
+    if (mobileRuteoContainer) mobileRuteoContainer.innerHTML = ruteoInfoHtml;
 
-    const modal = $("modal-como-llegar");
-    if (modal && typeof modal.showModal === "function") {
-      modal.showModal();
+    // En móvil, asegurar que el bottom sheet se despliegue para leer los pasos
+    const sheet = $("mobile-bottom-sheet");
+    if (sheet) {
+      sheet.classList.add("expanded");
+      state.sheetExpandido = true;
+      const toggleText = $("sheet-toggle-text");
+      if (toggleText) toggleText.textContent = "Contraer resultados";
     }
   }
 
-  window.abrirRuteoEfector = function (nombre) {
-    const r = EFECTORES.find((e) => e.nombre === nombre);
-    if (r) mostrarComoLlegar(r);
+  function volverDesdeRuteo() {
+    if (state.origenRuteo === "ficha" && state.efectorSeleccionado) {
+      activarVista("ficha");
+    } else {
+      const panelFiltros = $("sidebar-panel-filtros");
+      const panelRuteo = $("sidebar-panel-ruteo");
+      const mobileResultsList = $("mobile-results-list");
+      const mobileRuteoContainer = $("mobile-ruteo-container");
+
+      if (panelFiltros) panelFiltros.classList.remove("hidden");
+      if (panelRuteo) panelRuteo.classList.add("hidden");
+      if (mobileResultsList) mobileResultsList.classList.remove("hidden");
+      if (mobileRuteoContainer) mobileRuteoContainer.classList.add("hidden");
+    }
+  }
+
+  function cerrarModalRuteo() {
+    const modal = $("modal-como-llegar-container");
+    if (modal) modal.classList.remove("open");
+  }
+
+  // ---------------------------------------------------------------- Drawer Menú Lateral
+  function abrirDrawer() {
+    $("drawer-backdrop")?.classList.add("open");
+    $("drawer-menu")?.classList.add("open");
+    $("btn-abrir-menu")?.setAttribute("aria-expanded", "true");
+    $("btn-cerrar-drawer")?.focus();
+  }
+
+  function cerrarDrawer() {
+    $("drawer-backdrop")?.classList.remove("open");
+    $("drawer-menu")?.classList.remove("open");
+    $("btn-abrir-menu")?.setAttribute("aria-expanded", "false");
+  }
+
+  // ---------------------------------------------------------------- Bottom Sheet Móvil
+  function toggleBottomSheet() {
+    const sheet = $("mobile-bottom-sheet");
+    const toggleText = $("sheet-toggle-text");
+    const toggleIcon = $("sheet-toggle-icon");
+    if (!sheet) return;
+
+    state.sheetExpandido = !state.sheetExpandido;
+    sheet.classList.toggle("expanded", state.sheetExpandido);
+
+    if (toggleText) toggleText.textContent = state.sheetExpandido ? "Contraer resultados" : "Expandir resultados";
+    if (toggleIcon) {
+      toggleIcon.innerHTML = state.sheetExpandido ? '<path d="m6 9 6 6 6-6"/>' : '<path d="m18 15-6-6-6 6"/>';
+    }
+  }
+
+  // ---------------------------------------------------------------- Inicialización y Listeners
+  function inicializarEventos() {
+    // Logo en Header vuelve al inicio
+    $("nav-brand-logo")?.addEventListener("click", (e) => {
+      e.preventDefault();
+      activarVista("inicio");
+    });
+
+    // Enlaces de navegación escritorio
+    $("btn-nav-inicio")?.addEventListener("click", () => activarVista("inicio"));
+    $("btn-nav-mapa")?.addEventListener("click", () => activarVista("mapa"));
+    $("btn-nav-favoritos")?.addEventListener("click", () => activarVista("favoritos"));
+    $("btn-nav-info")?.addEventListener("click", () => activarVista("info"));
+
+    // Navegación móvil inferior
+    $("btn-bottom-inicio")?.addEventListener("click", () => activarVista("inicio"));
+    $("btn-bottom-mapa")?.addEventListener("click", () => activarVista("mapa"));
+    $("btn-bottom-buscar")?.addEventListener("click", () => {
+      activarVista("mapa");
+      setTimeout(() => $("input-busqueda-sidebar")?.focus(), 150);
+    });
+    $("btn-bottom-favoritos")?.addEventListener("click", () => activarVista("favoritos"));
+    $("btn-bottom-mas")?.addEventListener("click", () => abrirDrawer());
+
+    // Drawer lateral móvil
+    $("btn-abrir-menu")?.addEventListener("click", () => abrirDrawer());
+    $("btn-cerrar-drawer")?.addEventListener("click", () => cerrarDrawer());
+    $("drawer-backdrop")?.addEventListener("click", () => cerrarDrawer());
+
+    $("drawer-link-inicio")?.addEventListener("click", () => activarVista("inicio"));
+    $("drawer-link-mapa")?.addEventListener("click", () => activarVista("mapa"));
+    $("drawer-link-buscar")?.addEventListener("click", () => {
+      activarVista("mapa");
+      setTimeout(() => $("input-busqueda-sidebar")?.focus(), 150);
+    });
+    $("drawer-link-favoritos")?.addEventListener("click", () => activarVista("favoritos"));
+    $("drawer-link-info")?.addEventListener("click", () => activarVista("info"));
+
+    // Tecla Escape cierra modales y drawer (Página 7)
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        cerrarDrawer();
+        cerrarModalRuteo();
+      }
+    });
+
+    // Botones del Hero de Inicio
+    $("btn-gps-home")?.addEventListener("click", () => solicitarGeolocalizacion());
+    $("btn-explorar-todo")?.addEventListener("click", () => {
+      state.categoria = "todas";
+      activarVista("mapa");
+    });
+
+    // Tarjetas de categoría en Inicio (Página 1 y 5)
+    document.querySelectorAll(".category-card").forEach((card) => {
+      card.addEventListener("click", () => {
+        const cat = card.getAttribute("data-cat");
+        state.categoria = cat || "todas";
+        // Actualizar chips de filtro
+        document.querySelectorAll(".filter-chip").forEach((chip) => {
+          chip.classList.toggle("active", chip.getAttribute("data-cat") === state.categoria);
+        });
+        activarVista("mapa");
+      });
+    });
+
+    // Chips de categoría en el sidebar del mapa
+    document.querySelectorAll(".filter-chip").forEach((chip) => {
+      chip.addEventListener("click", () => {
+        document.querySelectorAll(".filter-chip").forEach((c) => c.classList.remove("active"));
+        chip.classList.add("active");
+        state.categoria = chip.getAttribute("data-cat") || "todas";
+        filtrarEfectores();
+      });
+    });
+
+    // Llenar selector de Municipios en sidebar
+    const selectMuni = $("select-partido-sidebar");
+    if (selectMuni && MUNICIPIOS.length) {
+      MUNICIPIOS.forEach((m) => {
+        const opt = document.createElement("option");
+        opt.value = m.nombre;
+        opt.textContent = m.nombre;
+        selectMuni.appendChild(opt);
+      });
+      selectMuni.addEventListener("change", (e) => {
+        state.municipio = e.target.value;
+        filtrarEfectores();
+      });
+    }
+
+    // Buscador en Home (con debounce de 300 ms, Página 6)
+    const inputHome = $("input-busqueda-home");
+    const clearHome = $("btn-limpiar-home");
+    if (inputHome) {
+      inputHome.addEventListener("input", (e) => {
+        clearHome?.classList.toggle("visible", e.target.value.length > 0);
+        clearTimeout(state.debounceTimer);
+        state.debounceTimer = setTimeout(() => {
+          state.texto = e.target.value;
+          if (e.target.value.trim().length > 1) {
+            $("input-busqueda-sidebar").value = state.texto;
+            activarVista("mapa");
+          }
+        }, 300);
+      });
+
+      inputHome.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          state.texto = inputHome.value;
+          $("input-busqueda-sidebar").value = state.texto;
+          activarVista("mapa");
+        }
+      });
+    }
+    clearHome?.addEventListener("click", () => {
+      if (inputHome) inputHome.value = "";
+      clearHome.classList.remove("visible");
+      state.texto = "";
+    });
+
+    // Buscador en Sidebar del Mapa (con debounce de 300 ms)
+    const inputSidebar = $("input-busqueda-sidebar");
+    const clearSidebar = $("btn-limpiar-sidebar");
+    if (inputSidebar) {
+      inputSidebar.addEventListener("input", (e) => {
+        clearSidebar?.classList.toggle("visible", e.target.value.length > 0);
+        clearTimeout(state.debounceTimer);
+        state.debounceTimer = setTimeout(() => {
+          state.texto = e.target.value;
+          filtrarEfectores();
+        }, 300);
+      });
+
+      inputSidebar.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          state.texto = inputSidebar.value;
+          filtrarEfectores();
+        }
+      });
+    }
+    clearSidebar?.addEventListener("click", () => {
+      if (inputSidebar) inputSidebar.value = "";
+      clearSidebar.classList.remove("visible");
+      state.texto = "";
+      filtrarEfectores();
+    });
+
+    // Botones de volver y limpiar en sidebar
+    $("btn-sidebar-volver-inicio")?.addEventListener("click", () => activarVista("inicio"));
+    $("btn-sidebar-limpiar")?.addEventListener("click", () => window.limpiarTodosFiltros());
+
+    // Botón volver en Ficha
+    $("btn-ficha-volver")?.addEventListener("click", () => {
+      activarVista("mapa");
+    });
+
+    // Bottom sheet móvil
+    $("btn-toggle-sheet")?.addEventListener("click", toggleBottomSheet);
+    $("btn-mobile-sheet-list")?.addEventListener("click", () => {
+      state.sheetExpandido = true;
+      $("mobile-bottom-sheet")?.classList.add("expanded");
+      $("sheet-toggle-text").textContent = "Contraer resultados";
+    });
+
+    // Botón volver desde Ruteo
+    $("btn-ruteo-volver")?.addEventListener("click", () => volverDesdeRuteo());
+
+    // Modal Cómo llegar (fallback)
+    $("btn-cerrar-modal-ruteo")?.addEventListener("click", cerrarModalRuteo);
+    $("btn-cerrar-modal-accion")?.addEventListener("click", cerrarModalRuteo);
+    $("modal-como-llegar-container")?.addEventListener("click", (e) => {
+      if (e.target === $("modal-como-llegar-container")) cerrarModalRuteo();
+    });
+
+    // Actualizar badges
+    actualizarBadgesFavoritos();
+  }
+
+  // Funciones expuestas globalmente
+  window.limpiarTodosFiltros = function () {
+    state.categoria = "todas";
+    state.municipio = "";
+    state.texto = "";
+    if ($("input-busqueda-sidebar")) $("input-busqueda-sidebar").value = "";
+    if ($("input-busqueda-home")) $("input-busqueda-home").value = "";
+    if ($("btn-limpiar-sidebar")) $("btn-limpiar-sidebar").classList.remove("visible");
+    if ($("btn-limpiar-home")) $("btn-limpiar-home").classList.remove("visible");
+    if ($("select-partido-sidebar")) $("select-partido-sidebar").value = "";
+    document.querySelectorAll(".filter-chip").forEach((chip) => {
+      chip.classList.toggle("active", chip.getAttribute("data-cat") === "todas");
+    });
+    filtrarEfectores();
   };
 
+  window.abrirFichaDesdeMapa = function (nombre) {
+    const efector = EFECTORES.find((e) => e.nombre === nombre);
+    if (efector) abrirFicha(efector);
+  };
 
-  // ---------------------------------------------------------------- filtros (UI)
-  function poblarSelects() {
-    // categorías (de taxonomía, y si no hay taxonomía, de los datos)
-    const cats = TAXONOMIA.length ? TAXONOMIA : uniq(EFECTORES.map((r) => r.categoria));
-    const selCat = $("select-categoria");
-    cats.forEach((c) => {
-      const nombre = typeof c === "string" ? c : c.categoria;
-      const o = document.createElement("option");
-      o.value = nombre;
-      o.textContent = nombre;
-      selCat.appendChild(o);
-    });
+  window.ruteoDesdeMapa = function (nombre) {
+    const efector = EFECTORES.find((e) => e.nombre === nombre);
+    if (efector) mostrarComoLlegar(efector, "mapa");
+  };
 
-    const selMun = $("select-municipio");
-    MUNICIPIOS.forEach((m) => {
-      const o = document.createElement("option");
-      o.value = m.nombre;
-      o.textContent = m.nombre;
-      selMun.appendChild(o);
-    });
+  window.volverDesdeRuteo = function () {
+    volverDesdeRuteo();
+  };
 
-    selCat.addEventListener("change", () => {
-      state.categoria = selCat.value;
-      poblarSubcategorias();
-      filtrar();
-    });
-    selMun.addEventListener("change", () => {
-      state.municipio = selMun.value;
-      filtrar();
-    });
-  }
+  window.irABuscar = function () {
+    activarVista("mapa");
+  };
 
-  function poblarSubcategorias() {
-    const sel = $("select-subcategoria");
-    sel.innerHTML = '<option value="">Todos los servicios</option>';
-    if (!state.categoria) { state.subcategoria = ""; sel.disabled = true; return; }
-    sel.disabled = false;
-    const cat = TAXONOMIA.find((c) => (typeof c === "string" ? c : c.categoria) === state.categoria);
-    const subs = cat ? cat.subcategorias.map((s) => (typeof s === "string" ? s : s.nombre)) : uniq(EFECTORES.filter((r) => r.categoria === state.categoria).map((r) => r.subcategoria));
-    subs.filter(Boolean).sort().forEach((s) => {
-      const o = document.createElement("option");
-      o.value = s;
-      o.textContent = s;
-      sel.appendChild(o);
-    });
-    sel.addEventListener("change", () => {
-      state.subcategoria = sel.value;
-      filtrar();
-    });
-  }
-
-  function uniq(arr) { return [...new Set(arr.filter(Boolean))]; }
-
-  // ---------------------------------------------------------------- ubicación del usuario
-  function setUbicacion(lat, lon, label) {
-    state.ubicacion = { lat, lon, label };
-    if (state.marcadorUsuario) map.removeLayer(state.marcadorUsuario);
-    state.marcadorUsuario = L.marker([lat, lon], {
-      icon: L.divIcon({ className: "", html: '<div style="width:14px;height:14px;border-radius:50%;background:#ef4444;border:2.5px solid #fff;box-shadow:0 0 0 3px rgba(239,68,68,.4)"></div>', iconSize: [14, 14], iconAnchor: [7, 7] }),
-    }).addTo(map);
-    state.marcadorUsuario.bindPopup("Tu ubicación").openPopup();
-    $("label-ubicacion").textContent = label || "Ubicación marcada. Los resultados se ordenan por distancia.";
-    map.setView([lat, lon], 12);
-    filtrar();
-  }
-
-  function usarGeolocalizacion() {
-    if (!navigator.geolocation) { $("label-ubicacion").textContent = "Tu navegador no soporta geolocalización."; return; }
-    $("label-ubicacion").textContent = "Obteniendo ubicación…";
-    navigator.geolocation.getCurrentPosition(
-      (pos) => setUbicacion(pos.coords.latitude, pos.coords.longitude, "Ubicación obtenida por GPS."),
-      () => { $("label-ubicacion").textContent = "No se pudo obtener la ubicación. Probá hacer clic en el mapa."; },
-      { enableHighAccuracy: true, timeout: 8000 }
-    );
-  }
-
-  function geocodificarTexto() {
-    const q = $("input-ubicacion").value.trim();
-    if (!q) return;
-    $("label-ubicacion").textContent = "Buscando dirección…";
-    fetch("https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=ar&q=" + encodeURIComponent(q + ", Buenos Aires, Argentina"))
-      .then((r) => r.json())
-      .then((d) => {
-        if (d && d[0]) setUbicacion(parseFloat(d[0].lat), parseFloat(d[0].lon), "Ubicación: " + d[0].display_name);
-        else $("label-ubicacion").textContent = "No se encontró la dirección. Probá hacer clic en el mapa.";
-      })
-      .catch(() => { $("label-ubicacion").textContent = "No se pudo buscar la dirección. Hacé clic en el mapa."; });
-  }
-
-  // ---------------------------------------------------------------- notas metodológicas
-  function renderNotas() {
-    const notas = [
-      { titulo: "Fuente de datos", texto: "Listados oficiales de establecimientos de la Provincia de Buenos Aires (sistemas.ms.gba.gov.ar), relevados por estudiantes de Salud Comunitaria en 2026." },
-      { titulo: "Cobertura", texto: "Región Sanitaria VII: Hurlingham, Ituzaingó, Morón, Merlo, Moreno, Tres de Febrero, General Rodríguez, General Las Heras, Marcos Paz y Luján." },
-      { titulo: "Georreferenciación", texto: "Las coordenadas se obtuvieron con OpenStreetMap (Nominatim). Los domicilios que no pudieron resolverse se ubicaron en el centro del municipio (marcado en la leyenda)." },
-    ];
-    $("notas-metodologia").innerHTML = notas.map((n) => `
-      <div class="card bg-base-200 shadow-sm">
-        <div class="card-body">
-          <h3 class="card-title text-sm">${esc(n.titulo)}</h3>
-          <p class="text-sm text-base-content/70">${esc(n.texto)}</p>
-        </div>
-      </div>`).join("");
-  }
-
-  function renderLeyenda() {
-    const items = [
-      ["Primer Nivel", COLORS["Primer Nivel"], "CAPS / centros de salud"],
-      ["Segundo Nivel", COLORS["Segundo Nivel"], "hospitales generales"],
-      ["Tercer Nivel", COLORS["Tercer Nivel"], "alta complejidad"],
-      ["Nutrición", COLORS["NUTRICIÓN Y ALIMENTACIÓN"], "consultorios"],
-    ];
-    $("leyenda-mapa").innerHTML = `
-      <div class="font-semibold mb-0.5">Referencias</div>` +
-      items.map(([t, c, d]) => `
-        <div class="flex items-center gap-2">
-          <span class="h-3 w-3 rounded-full shrink-0" style="background:${c}"></span>
-          <span class="text-base-content/80">${t}</span>
-          <span class="text-base-content/40">${d}</span>
-        </div>`).join("");
-  }
-
-  // ---------------------------------------------------------------- init
-  function init() {
-    $("stat-efectores").textContent = EFECTORES.length;
-    $("stat-municipios").textContent = MUNICIPIOS.length;
-    $("stat-categorias").textContent = TAXONOMIA.length || uniq(EFECTORES.map((r) => r.categoria)).length;
-    poblarSelects();
-    renderLeyenda();
-    renderNotas();
-
-    $("btn-milocalizacion").addEventListener("click", usarGeolocalizacion);
-    $("input-ubicacion").addEventListener("keydown", (e) => { if (e.key === "Enter") geocodificarTexto(); });
-    $("input-busqueda").addEventListener("input", () => { state.texto = $("input-busqueda").value; filtrar(); });
-    $("btn-limpiar").addEventListener("click", () => {
-      state.categoria = state.subcategoria = state.municipio = state.texto = "";
-      state.ubicacion = null;
-      if (state.marcadorUsuario) { map.removeLayer(state.marcadorUsuario); state.marcadorUsuario = null; }
-      $("select-categoria").value = "";
-      $("select-municipio").value = "";
-      $("input-busqueda").value = "";
-      $("input-ubicacion").value = "";
-      poblarSubcategorias();
-      $("label-ubicacion").textContent = "Podés también hacer clic en el mapa para marcar tu ubicación.";
-      filtrar();
-    });
-
-    map.on("click", (e) => setUbicacion(e.latlng.lat, e.latlng.lng, "Ubicación marcada con un clic en el mapa."));
-
-    filtrar();
-  }
-
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
-  else init();
+  // ---------------------------------------------------------------- Arranque
+  document.addEventListener("DOMContentLoaded", () => {
+    inicializarEventos();
+    // Actualizar stats de inicio
+    if ($("home-stat-efectores")) $("home-stat-efectores").textContent = EFECTORES.length || 313;
+  });
 })();

@@ -1,240 +1,607 @@
 <!doctype html>
-<html lang="es" data-theme="salud">
+<html lang="es">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Panel de Salud Comunitaria · Región Sanitaria VII</title>
-    <meta name="description" content="Panel interactivo georreferenciado de servicios públicos de salud de la Región Sanitaria VII (conurbano bonaerense). Proyecto conjunto Salud Comunitaria + IA." />
+    <title>Servicios de Salud · Universidad Nacional de Hurlingham</title>
+    <meta name="description" content="Buscador institucional georreferenciado de servicios públicos de salud de la Región Sanitaria VII. Universidad Nacional de Hurlingham." />
+    
+    <!-- Tipografía Inter & Iconos -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    
+    <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link rel="stylesheet" href="./assets/css/output.css" />
+    
+    <!-- Estilos de diseño según Manual UX/UI UNAHUR (docs/UXUI.pdf) -->
+    <link rel="stylesheet" href="./assets/css/styles.css" />
   </head>
-  <body class="min-h-screen">
-    <!-- ============================ NAVBAR ============================ -->
-    <div class="navbar sticky top-0 z-[1000] bg-base-200/90 backdrop-blur border-b border-base-300">
-      <div class="navbar-start gap-3 px-2">
-        <img src="./assets/img/logo-unahur-blanco.png" alt="Logo Universidad Nacional de Hurlingham" class="h-8 w-auto" />
-        <div class="leading-tight">
-          <div class="text-base font-bold">Panel de Salud Comunitaria</div>
-          <div class="text-xs text-base-content/60">Región Sanitaria VII · Conurbano Bonaerense</div>
-        </div>
-      </div>
-      <div class="navbar-end gap-2 px-2">
-        <span class="badge badge-warning badge-lg gap-1">
-          <span class="status status-warning h-2 w-2"></span>
-          DEMO
-        </span>
-        <span class="badge badge-ghost badge-outline hidden sm:inline-flex">Salud Comunitaria × IA</span>
-      </div>
-    </div>
+  <body>
+    <!-- ============================ CABECERA INSTITUCIONAL ============================ -->
+    <header class="site-header" role="banner">
+      <div class="site-header-inner">
+        <a href="#inicio" class="brand-link" id="nav-brand-logo" aria-label="Ir al inicio de Servicios de salud UNAHUR">
+          <img src="./assets/img/logo-unahur.png" alt="Universidad Nacional de Hurlingham" class="brand-logo-img" />
+          <div class="brand-title-wrap">
+            <span class="brand-title">Servicios de salud</span>
+            <span class="brand-subtitle">Región Sanitaria VII</span>
+          </div>
+        </a>
 
-    <!-- ============================ HERO ============================ -->
-    <header class="border-b border-base-300 bg-gradient-to-b from-base-200 to-base-100">
-      <div class="container mx-auto px-4 py-8">
-        <div class="max-w-3xl">
-          <h1 class="text-3xl md:text-4xl font-extrabold leading-tight">
-            Encontrá el servicio de salud público más cercano
-          </h1>
-          <p class="mt-3 text-base-content/70">
-            Consultá los efectores de salud de los 10 municipios de la Región Sanitaria VII.
-            Filtrá por disciplina o problemática, indicá tu ubicación y mirá en el mapa cuáles
-            te quedan más cerca.
-          </p>
-        </div>
+        <!-- Navegación escritorio -->
+        <nav class="header-nav" role="navigation" aria-label="Navegación principal">
+          <button type="button" class="header-nav-btn active" id="btn-nav-inicio" aria-current="page">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            Inicio
+          </button>
+          <button type="button" class="header-nav-btn" id="btn-nav-mapa">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" x2="9" y1="3" y2="18"/><line x1="15" x2="15" y1="6" y2="21"/></svg>
+            Mapa y resultados
+          </button>
+          <button type="button" class="header-nav-btn" id="btn-nav-favoritos">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+            Favoritos
+            <span class="fav-badge-count" id="header-fav-count">0</span>
+          </button>
+          <button type="button" class="header-nav-btn" id="btn-nav-info">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="16" y2="12"/><line x1="12" x2="12.01" y1="8" y2="8"/></svg>
+            Sobre el proyecto
+          </button>
+        </nav>
 
-        <!-- Stats -->
-        <div class="stats stats-vertical sm:stats-horizontal bg-base-200 rounded-box mt-6 w-full shadow-sm">
-          <div class="stat">
-            <div class="stat-title">Efectores relevados</div>
-            <div class="stat-value text-primary" id="stat-efectores">—</div>
-            <div class="stat-desc">centros de salud, hospitales y consultorios</div>
-          </div>
-          <div class="stat">
-            <div class="stat-title">Municipios</div>
-            <div class="stat-value" id="stat-municipios">—</div>
-            <div class="stat-desc">Región Sanitaria VII</div>
-          </div>
-          <div class="stat">
-            <div class="stat-title">Categorías</div>
-            <div class="stat-value" id="stat-categorias">—</div>
-            <div class="stat-desc">disciplinas y problemáticas</div>
-          </div>
-          <div class="stat">
-            <div class="stat-title">Resultados visibles</div>
-            <div class="stat-value text-secondary" id="stat-visibles">—</div>
-            <div class="stat-desc">según los filtros activos</div>
-          </div>
-        </div>
+        <!-- Botón menú móvil -->
+        <button type="button" class="mobile-menu-btn" id="btn-abrir-menu" aria-label="Abrir menú de opciones" aria-expanded="false" aria-controls="drawer-menu">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
+        </button>
       </div>
     </header>
 
-    <!-- ============================ LEYENDA DEMO ============================ -->
-    <div class="container mx-auto px-4 pt-4">
-      <div class="alert alert-warning alert-soft shadow-sm">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0 stroke-current" fill="none" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-        </svg>
-        <div class="text-sm">
-          <span class="font-bold">Versión DEMO.</span>
-          Los datos provienen del relevamiento de estudiantes de Salud Comunitaria (fuentes oficiales de la Provincia de
-          Buenos Aires). La georreferenciación es <strong>aproximada</strong>: cuando no se pudo resolver el domicilio exacto,
-          el punto se ubica en el centro del municipio. Horarios, turnos y requisitos aún están en proceso de validación.
+    <!-- ============================ VISTA 1: INICIO ============================ -->
+    <main id="view-inicio" class="view-container" role="main">
+      <div class="home-section">
+        <!-- Título principal con bloque verde institucional -->
+        <div class="hero-header">
+          <h1 class="hero-title">
+            ¿QUÉ NECESITÁS<br />
+            <span class="hero-title-highlight">BUSCAR HOY?</span>
+          </h1>
+          <p class="hero-subtitle">Encontrá el servicio de salud más cercano a vos en la Región Sanitaria VII.</p>
+        </div>
+
+        <!-- Buscador principal -->
+        <div class="hero-search-box">
+          <label for="input-busqueda-home" class="sr-only">Buscar servicio o establecimiento</label>
+          <div class="search-wrapper">
+            <span class="search-icon" aria-hidden="true">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" x2="16.65" y1="21" y2="16.65"/></svg>
+            </span>
+            <input type="text" id="input-busqueda-home" class="search-input" placeholder="¿Qué servicio estás buscando?" autocomplete="off" />
+            <button type="button" id="btn-limpiar-home" class="search-clear-btn" aria-label="Limpiar búsqueda">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" x2="6" y1="6" y2="18"/><line x1="6" x2="18" y1="6" y2="18"/></svg>
+            </button>
+          </div>
+
+          <div class="hero-search-actions">
+            <button type="button" class="button button--secondary" id="btn-gps-home" title="Detectar ubicación GPS">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polygon points="12 2 12 6 12 18 12 22"/><polygon points="2 12 6 12 18 12 22 12"/><circle cx="12" cy="12" r="3"/></svg>
+              Usar mi ubicación
+            </button>
+            <button type="button" class="button button--primary" id="btn-explorar-todo">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/></svg>
+              Ver mapa completo
+            </button>
+            <span id="label-gps-status" style="font-size: 0.85rem; color: var(--muted);" aria-live="polite"></span>
+          </div>
+        </div>
+
+        <!-- Cuadrícula de 8 categorías del mockup institucional -->
+        <div class="categories-title">
+          <span>Categorías de atención</span>
+          <span style="font-size: 0.85rem; font-weight: normal; color: var(--muted);">Elegí para filtrar</span>
+        </div>
+        <div class="categories-grid" role="group" aria-label="Categorías de servicios de salud">
+          <!-- 1. CAPS -->
+          <button type="button" class="category-card" data-cat="caps" aria-label="Centros de Atención Primaria de la Salud (CAPS)">
+            <div class="category-card-icon" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M12 11v6"/><path d="M9 14h6"/></svg>
+            </div>
+            <span class="category-card-name">CAPS (Primer nivel)</span>
+          </button>
+
+          <!-- 2. Hospitales -->
+          <button type="button" class="category-card" data-cat="hospitales" aria-label="Hospitales">
+            <div class="category-card-icon" style="color: var(--brand-cyan);" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="20" x="4" y="2" rx="2" ry="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M12 6v4"/><path d="M10 8h4"/></svg>
+            </div>
+            <span class="category-card-name">Hospitales</span>
+          </button>
+
+          <!-- 3. Vacunación -->
+          <button type="button" class="category-card" data-cat="vacunacion" aria-label="Vacunación e inmunizaciones">
+            <div class="category-card-icon" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 2 4 4"/><path d="m17 7 3-3"/><path d="M19 9 8.7 19.3c-1 1-2.5 1-3.4 0l-.6-.6c-1-1-1-2.5 0-3.4L15 5"/><path d="m9 11 4 4"/><path d="m5 19-3 3"/></svg>
+            </div>
+            <span class="category-card-name">Vacunación</span>
+          </button>
+
+          <!-- 4. Salud mental -->
+          <button type="button" class="category-card" data-cat="salud-mental" aria-label="Salud mental y acompañamiento">
+            <div class="category-card-icon" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a8 8 0 0 0-8 8c0 3.3 2 6.1 5 7.4V20a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-2.6c3-1.3 5-4.1 5-7.4a8 8 0 0 0-8-8z"/><path d="M12 6v6l4 2"/></svg>
+            </div>
+            <span class="category-card-name">Salud mental</span>
+          </button>
+
+          <!-- 5. Odontología -->
+          <button type="button" class="category-card" data-cat="odontologia" aria-label="Odontología">
+            <div class="category-card-icon" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C8.5 2 6 4 6 7c0 3 1.5 6 3 11 1.2 4 3 4 3 4s1.8 0 3-4c1.5-5 3-8 3-11 0-3-2.5-5-6-5z"/><path d="M9 10c1.5 1 4.5 1 6 0"/></svg>
+            </div>
+            <span class="category-card-name">Odontología</span>
+          </button>
+
+          <!-- 6. Rehabilitación -->
+          <button type="button" class="category-card" data-cat="rehabilitacion" aria-label="Rehabilitación y kinesiología">
+            <div class="category-card-icon" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="4" r="2"/><path d="m5 16 3-1 2-5-4-1"/><path d="m14 11 3 3 4-2"/><path d="M10 18v4"/><path d="M14 18v4"/></svg>
+            </div>
+            <span class="category-card-name">Rehabilitación</span>
+          </button>
+
+          <!-- 7. Oftalmología -->
+          <button type="button" class="category-card" data-cat="oftalmologia" aria-label="Oftalmología y salud visual">
+            <div class="category-card-icon" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+            </div>
+            <span class="category-card-name">Oftalmología</span>
+          </button>
+
+          <!-- 8. Otros servicios -->
+          <button type="button" class="category-card" data-cat="otros" aria-label="Otros servicios de salud">
+            <div class="category-card-icon" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>
+            </div>
+            <span class="category-card-name">Otros servicios</span>
+          </button>
+        </div>
+
+        <!-- Indicadores institucionales -->
+        <div class="stats-banner">
+          <div class="stat-item">
+            <span class="stat-item-number" id="home-stat-efectores">313</span>
+            <span class="stat-item-label">Efectores relevados</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-item-number">10</span>
+            <span class="stat-item-label">Municipios de la RS VII</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-item-number" id="home-stat-categorias">13</span>
+            <span class="stat-item-label">Campos de atención</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-item-number" style="color: var(--brand-cyan);">Público</span>
+            <span class="stat-item-label">Acceso libre y gratuito</span>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- ============================ VISTA 2: MAPA Y RESULTADOS ============================ -->
+    <section id="view-mapa" class="view-container hidden" role="region" aria-label="Mapa y buscador interactivo">
+      <div class="map-view-layout">
+        <!-- Columna izquierda (Escritorio, ancho 360px) -->
+        <aside class="map-sidebar" role="region" aria-label="Resultados y filtros">
+          <!-- PANEL 1: FILTROS Y RESULTADOS -->
+          <div id="sidebar-panel-filtros" style="display: flex; flex-direction: column; height: 100%;">
+            <!-- Cabecera de filtros en sidebar -->
+            <div class="sidebar-header">
+              <div class="sidebar-back-row">
+                <button type="button" class="sidebar-back-btn" id="btn-sidebar-volver-inicio">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+                  Volver al inicio
+                </button>
+                <button type="button" class="button button--ghost" id="btn-sidebar-limpiar" style="min-height: 32px; padding: 4px 8px; font-size: 0.8rem;">
+                  Limpiar filtros
+                </button>
+              </div>
+
+              <!-- Buscador en sidebar -->
+              <div class="search-wrapper">
+                <label for="input-busqueda-sidebar" class="sr-only">Buscar servicio o establecimiento</label>
+                <span class="search-icon" aria-hidden="true">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" x2="16.65" y1="21" y2="16.65"/></svg>
+                </span>
+                <input type="text" id="input-busqueda-sidebar" class="search-input" placeholder="¿Qué servicio estás buscando?" style="min-height: 42px; font-size: 0.9rem;" autocomplete="off" />
+                <button type="button" id="btn-limpiar-sidebar" class="search-clear-btn" aria-label="Borrar texto">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" x2="6" y1="6" y2="18"/><line x1="6" x2="18" y1="6" y2="18"/></svg>
+                </button>
+              </div>
+
+              <!-- Chips de filtro de categoría -->
+              <div class="category-chips-scroll" role="group" aria-label="Filtro rápido de categoría">
+                <button type="button" class="filter-chip active" data-cat="todas">Todas</button>
+                <button type="button" class="filter-chip" data-cat="caps">CAPS</button>
+                <button type="button" class="filter-chip" data-cat="hospitales">Hospitales</button>
+                <button type="button" class="filter-chip" data-cat="vacunacion">Vacunación</button>
+                <button type="button" class="filter-chip" data-cat="salud-mental">Salud mental</button>
+                <button type="button" class="filter-chip" data-cat="odontologia">Odontología</button>
+                <button type="button" class="filter-chip" data-cat="rehabilitacion">Rehabilitación</button>
+                <button type="button" class="filter-chip" data-cat="oftalmologia">Oftalmología</button>
+                <button type="button" class="filter-chip" data-cat="otros">Otros</button>
+              </div>
+
+              <!-- Selector de Municipio -->
+              <div>
+                <label for="select-partido-sidebar" class="sr-only">Seleccionar Municipio</label>
+                <select id="select-partido-sidebar" class="select-municipio-input" aria-label="Filtrar por municipio">
+                  <option value="">Toda la Región Sanitaria VII</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Barra de conteo de resultados -->
+            <div class="results-meta-bar">
+              <span class="results-count-text" id="sidebar-count" aria-live="polite">313 establecimientos</span>
+              <span id="sidebar-orden-label" style="font-size: 0.75rem;">Orden: alfabético</span>
+            </div>
+
+            <!-- Lista de resultados con scroll independiente -->
+            <div class="results-list-scroll" id="sidebar-results-list" role="feed" aria-label="Lista de centros de salud">
+              <!-- Filas dinámicas generadas en JavaScript -->
+            </div>
+          </div>
+
+          <!-- PANEL 2: RUTEO Y GUÍA EN COLECTIVO (Visible al pulsar Cómo llegar) -->
+          <div id="sidebar-panel-ruteo" class="sidebar-ruteo-box hidden">
+            <div class="ruteo-header-card">
+              <div class="sidebar-back-row" style="margin-bottom: 8px;">
+                <button type="button" class="sidebar-back-btn" id="btn-ruteo-volver">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+                  <span id="btn-ruteo-volver-label">Volver</span>
+                </button>
+              </div>
+              <div style="font-weight: 700; font-size: 1.05rem; color: var(--ink); display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 1.25rem;">🚌</span>
+                <span>Cómo llegar en colectivo</span>
+              </div>
+              <div style="font-size: 0.825rem; color: var(--muted); margin-top: 4px;" id="ruteo-trayecto-subtitulo">
+                Trayecto sobre el mapa
+              </div>
+            </div>
+            <div class="ruteo-body-card" id="ruteo-contenido-sidebar">
+              <!-- Contenido dinámico del viaje -->
+            </div>
+          </div>
+        </aside>
+
+        <!-- Área del mapa Leaflet -->
+        <div class="map-area-container">
+          <div id="mapa" role="application" aria-label="Mapa interactivo de establecimientos de salud"></div>
+
+          <!-- Controles flotantes accesibles en el mapa -->
+          <div class="map-floating-controls" aria-label="Controles del mapa">
+            <button type="button" class="map-control-btn" id="btn-map-zoom-in" title="Acercar mapa" aria-label="Acercar">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/></svg>
+            </button>
+            <button type="button" class="map-control-btn" id="btn-map-zoom-out" title="Alejar mapa" aria-label="Alejar">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" x2="19" y1="12" y2="12"/></svg>
+            </button>
+            <button type="button" class="map-control-btn" id="btn-map-gps" title="Centrar en mi ubicación" aria-label="Centrar en mi ubicación">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><line x1="12" x2="12" y1="2" y2="5"/><line x1="12" x2="12" y1="19" y2="22"/><line x1="2" x2="5" y1="12" y2="12"/><line x1="19" x2="22" y1="12" y2="12"/></svg>
+            </button>
+          </div>
+
+          <!-- Leyenda compacta en escritorio -->
+          <div class="map-legend-box" aria-hidden="true">
+            <div class="legend-item">
+              <span class="legend-dot caps"></span>
+              <span>CAPS / Centros de salud</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-dot hospital"></span>
+              <span>Hospitales</span>
+            </div>
+            <div class="legend-item" id="legend-user-item" style="display: none;">
+              <span class="legend-dot user"></span>
+              <span>Tu ubicación</span>
+            </div>
+          </div>
+
+          <!-- Panel móvil deslizable inferior (Bottom sheet) -->
+          <div class="mobile-bottom-sheet" id="mobile-bottom-sheet" role="region" aria-label="Resultados en móvil">
+            <div class="sheet-handle-bar">
+              <button type="button" class="button button--ghost" id="btn-toggle-sheet" style="min-height: 36px; padding: 4px 10px; font-size: 0.85rem; display: flex; align-items: center; gap: 6px;">
+                <span id="sheet-toggle-text">Expandir resultados</span>
+                <svg id="sheet-toggle-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>
+              </button>
+              <span style="font-size: 0.8rem; font-weight: 600; color: var(--ink);" id="mobile-sheet-count">313 centros</span>
+              <button type="button" class="button button--ghost" id="btn-mobile-sheet-list" style="min-height: 36px; padding: 4px 10px; font-size: 0.85rem; color: var(--action);">
+                Ver lista
+              </button>
+            </div>
+            <div class="results-list-scroll" id="mobile-results-list">
+              <!-- Resultados móvil sincronizados -->
+            </div>
+            <div id="mobile-ruteo-container" class="hidden" style="padding: 16px; overflow-y: auto; flex: 1;">
+              <!-- Ruteo móvil -->
+            </div>
+          </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================ VISTA 3: FICHA DE ESTABLECIMIENTO ============================ -->
+    <section id="view-ficha" class="view-container hidden" role="region" aria-label="Ficha de establecimiento">
+      <div class="ficha-view-container">
+        <!-- Botón Volver (conserva filtros y scroll) -->
+        <div class="ficha-back-bar">
+          <button type="button" class="ficha-back-btn" id="btn-ficha-volver">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+            Volver a resultados
+          </button>
+        </div>
+
+        <article class="ficha-card" id="ficha-card-content">
+          <!-- 1. Fotografía institucional o placeholder neutral (16:9 móvil, 3:1 escritorio) -->
+          <div class="ficha-photo-container" id="ficha-photo-box">
+            <div class="ficha-photo-placeholder">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/><path d="M9 9h1"/><path d="M9 13h1"/><path d="M9 17h1"/>
+              </svg>
+              <span class="ficha-photo-badge">Fotografía no disponible · Sede oficial relevada</span>
+            </div>
+          </div>
+
+          <!-- 2. Cuerpo de la ficha -->
+          <div class="ficha-body">
+            <!-- Nombre y categoría -->
+            <div class="ficha-header-block">
+              <div class="ficha-category-badge" id="ficha-badge-cat">
+                <span class="badge-caps">CAPS · Primer nivel</span>
+              </div>
+              <h2 class="ficha-title" id="ficha-nombre">—</h2>
+              <div style="font-size: 0.95rem; color: var(--muted);" id="ficha-partido-subtitle">—</div>
+            </div>
+
+            <!-- Datos de contacto -->
+            <div class="ficha-contact-grid">
+              <div class="contact-item">
+                <svg class="contact-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                <div>
+                  <div style="font-weight: 600; font-size: 0.85rem; color: var(--muted);">Dirección</div>
+                  <div id="ficha-domicilio" style="font-weight: 500;">—</div>
+                  <div id="ficha-distancia-wrap" style="color: var(--action); font-size: 0.85rem; font-weight: 600; margin-top: 2px;"></div>
+                </div>
+              </div>
+
+              <div class="contact-item">
+                <svg class="contact-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                <div>
+                  <div style="font-weight: 600; font-size: 0.85rem; color: var(--muted);">Teléfono</div>
+                  <div id="ficha-telefono">—</div>
+                </div>
+              </div>
+
+              <div class="contact-item">
+                <svg class="contact-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                <div>
+                  <div style="font-weight: 600; font-size: 0.85rem; color: var(--muted);">Horario de atención</div>
+                  <div id="ficha-horario">Horario no informado</div>
+                </div>
+              </div>
+
+              <div class="contact-item">
+                <svg class="contact-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                <div>
+                  <div style="font-weight: 600; font-size: 0.85rem; color: var(--muted);">Régimen de atención</div>
+                  <div style="font-weight: 500;">Público, provincial/municipal, gratuito</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Servicios disponibles -->
+            <h3 class="ficha-section-title">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 11 3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Servicios y especialidades confirmadas
+            </h3>
+            <div class="services-list" id="ficha-servicios-list">
+              <!-- Servicios con check -->
+            </div>
+
+            <!-- Accesibilidad e instalaciones -->
+            <h3 class="ficha-section-title">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24"/><path d="m14.83 9.17 4.24-4.24"/><path d="m14.83 14.83 4.24 4.24"/><path d="m9.17 14.83-4.24 4.24"/></svg>
+              Instalaciones y accesibilidad
+            </h3>
+            <div class="accessibility-chips-wrap" id="ficha-accesibilidad-wrap">
+              <span class="acc-chip">
+                <span>♿</span>
+                <span>Entrada accesible</span>
+              </span>
+              <span class="acc-chip">
+                <span>🅿️</span>
+                <span>Estacionamiento público</span>
+              </span>
+              <span class="acc-chip">
+                <span>🩺</span>
+                <span>Consultorios equipados</span>
+              </span>
+            </div>
+
+            <!-- Acciones de la ficha -->
+            <div class="ficha-actions-bar">
+              <button type="button" class="button button--primary" id="btn-ficha-como-llegar">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="16" height="16" x="4" y="4" rx="2"/><path d="M9 18v-6h6v6"/><path d="M9 9h.01"/><path d="M15 9h.01"/></svg>
+                Cómo llegar en colectivo
+              </button>
+              <button type="button" class="button button--secondary" id="btn-ficha-favorito">
+                <svg id="ficha-fav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+                <span id="ficha-fav-text">Guardar en favoritos</span>
+              </button>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- ============================ VISTA 4: MIS FAVORITOS ============================ -->
+    <section id="view-favoritos" class="view-container hidden" role="region" aria-label="Centros favoritos guardados">
+      <div class="favoritos-view-container">
+        <div class="favoritos-header">
+          <h2 class="favoritos-title">Mis favoritos</h2>
+          <p class="favoritos-desc">Guardá tus centros preferidos para acceder más rápido sin volver a buscarlos.</p>
+        </div>
+
+        <div class="favoritos-list" id="favoritos-list-container">
+          <!-- Lista o mensaje de vacío -->
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================ VISTA 5: SOBRE EL PROYECTO ============================ -->
+    <section id="view-info" class="view-container hidden" role="region" aria-label="Información institucional del proyecto">
+      <div class="ficha-view-container">
+        <div class="ficha-card" style="padding: var(--space-6);">
+          <h2 class="hero-title" style="font-size: 26px; margin-bottom: 12px;">Servicios de Salud · UNAHUR</h2>
+          <p style="font-size: 1rem; color: var(--muted); margin-bottom: 20px;">
+            Iniciativa conjunta de la carrera de <strong>Licenciatura en Salud Comunitaria</strong> y la <strong>Licenciatura en Inteligencia Artificial</strong> de la Universidad Nacional de Hurlingham (UNAHUR).
+          </p>
+
+          <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 8px;">Objetivo del panel</h3>
+          <p style="font-size: 0.95rem; color: var(--ink); line-height: 1.6; margin-bottom: 20px;">
+            Reducir la barrera de <strong>accesibilidad informacional</strong> para vecinos y equipos territoriales: que cualquier persona pueda ubicar con claridad qué servicio de salud público existe, dónde se localiza, cómo llegar en transporte público y si responde a su consulta específica.
+          </p>
+
+          <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 8px;">Glosario de niveles de atención</h3>
+          <ul style="padding-left: 20px; font-size: 0.95rem; line-height: 1.6; margin-bottom: 20px;">
+            <li style="margin-bottom: 8px;"><strong>CAPS (Centro de Atención Primaria de la Salud):</strong> también conocidos como salas médicas o unidades sanitarias. Puerta de entrada al sistema de salud, dedicados a prevención, medicina general, pediatría, controles y vacunación.</li>
+            <li style="margin-bottom: 8px;"><strong>Segundo Nivel (Hospitales generales y de agudos):</strong> establecimientos con guardias activas, internación, cirugías programadas y estudios diagnósticos.</li>
+            <li style="margin-bottom: 8px;"><strong>Tercer Nivel (Hospitales especializados y alta complejidad):</strong> centros de referencia regional para patologías complejas y derivaciones específicas.</li>
+          </ul>
+
+          <div style="background-color: var(--surface-soft); padding: 16px; border-radius: 8px; border: 1px solid var(--line);">
+            <strong style="color: var(--action);">Cobertura territorial:</strong>
+            <p style="font-size: 0.9rem; color: var(--muted); margin-top: 4px;">
+              Los 10 municipios integrantes de la Región Sanitaria VII: General Las Heras, General Rodríguez, Hurlingham, Ituzaingó, Luján, Marcos Paz, Merlo, Moreno, Morón y Tres de Febrero.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================ NAVEGACIÓN INFERIOR MÓVIL ============================ -->
+    <nav class="bottom-nav-bar" role="navigation" aria-label="Navegación móvil">
+      <button type="button" class="bottom-nav-item active" id="btn-bottom-inicio" aria-current="page">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span>Inicio</span>
+      </button>
+
+      <button type="button" class="bottom-nav-item" id="btn-bottom-mapa">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" x2="9" y1="3" y2="18"/><line x1="15" x2="15" y1="6" y2="21"/></svg>
+        <span>Mapa</span>
+      </button>
+
+      <button type="button" class="bottom-nav-item" id="btn-bottom-buscar">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" x2="16.65" y1="21" y2="16.65"/></svg>
+        <span>Buscar</span>
+      </button>
+
+      <button type="button" class="bottom-nav-item" id="btn-bottom-favoritos">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+        <span>Favoritos</span>
+        <span class="bottom-nav-badge" id="bottom-fav-count" style="display: none;">0</span>
+      </button>
+
+      <button type="button" class="bottom-nav-item" id="btn-bottom-mas">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+        <span>Más</span>
+      </button>
+    </nav>
+
+    <!-- ============================ DRAWER MENÚ LATERAL MÓVIL ============================ -->
+    <div class="drawer-backdrop" id="drawer-backdrop" aria-hidden="true"></div>
+    <div class="drawer-sidebar" id="drawer-menu" role="dialog" aria-modal="true" aria-label="Menú principal">
+      <div class="drawer-header">
+        <img src="./assets/img/logo-unahur.png" alt="UNAHUR" style="width: 140px; height: auto;" />
+        <button type="button" class="icon-button" id="btn-cerrar-drawer" aria-label="Cerrar menú">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" x2="6" y1="6" y2="18"/><line x1="6" x2="18" y1="6" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="drawer-body">
+        <button type="button" class="drawer-link active" id="drawer-link-inicio">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+          Inicio
+        </button>
+        <button type="button" class="drawer-link" id="drawer-link-mapa">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/></svg>
+          Mapa de efectores
+        </button>
+        <button type="button" class="drawer-link" id="drawer-link-buscar">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" x2="16.65" y1="21" y2="16.65"/></svg>
+          Buscador de servicios
+        </button>
+        <button type="button" class="drawer-link" id="drawer-link-favoritos">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+          Mis favoritos
+        </button>
+
+        <div class="drawer-divider"></div>
+
+        <button type="button" class="drawer-link" id="drawer-link-info">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="16" y2="12"/><line x1="12" x2="12.01" y1="8" y2="8"/></svg>
+          Sobre la app y proyecto
+        </button>
+      </div>
+    </div>
+
+    <!-- ============================ MODAL CÓMO LLEGAR EN COLECTIVO ============================ -->
+    <div class="modal-backdrop-custom" id="modal-como-llegar-container" role="dialog" aria-modal="true" aria-labelledby="modal-ruteo-titulo">
+      <div class="modal-dialog-box">
+        <div class="modal-header">
+          <div class="modal-header-title" id="modal-ruteo-titulo">
+            <span style="font-size: 1.4rem;">🚌</span>
+            <span>Cómo llegar en colectivo</span>
+          </div>
+          <button type="button" class="icon-button" id="btn-cerrar-modal-ruteo" aria-label="Cerrar guía de viaje">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" x2="6" y1="6" y2="18"/><line x1="6" x2="18" y1="6" y2="18"/></svg>
+          </button>
+        </div>
+
+        <div class="modal-body" id="modal-ruteo-cuerpo">
+          <!-- Contenido del itinerario -->
+        </div>
+
+        <div class="modal-footer">
+          <a id="btn-gmaps-link" href="#" target="_blank" rel="noopener noreferrer" class="button button--secondary" style="font-size: 0.85rem; padding: 8px;">
+            Google Maps
+          </a>
+          <a id="btn-moovit-link" href="#" target="_blank" rel="noopener noreferrer" class="button button--secondary" style="font-size: 0.85rem; padding: 8px;">
+            Moovit
+          </a>
+          <button type="button" class="button button--primary" id="btn-cerrar-modal-accion" style="font-size: 0.85rem; padding: 8px;">
+            Volver a la ficha
+          </button>
         </div>
       </div>
     </div>
 
-    <!-- ============================ PANEL PRINCIPAL ============================ -->
-    <main class="container mx-auto px-4 py-6">
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        <!-- Columna izquierda: filtros + resultados -->
-        <div class="lg:col-span-4 xl:col-span-4 flex flex-col gap-4">
-          <!-- Filtros -->
-          <div class="card bg-base-200 shadow-sm">
-            <div class="card-body gap-3">
-              <h2 class="card-title text-lg">Buscador</h2>
+    <!-- ============================ AVISO FLOTANTE (TOAST) ============================ -->
+    <div id="toast-notificacion" class="toast-notification" role="status" aria-live="polite">
+      <span id="toast-mensaje">Guardado en favoritos</span>
+      <button type="button" class="toast-undo-btn" id="btn-toast-undo" style="display: none;">Deshacer</button>
+    </div>
 
-              <!-- Ubicación -->
-              <div class="form-control w-full">
-                <label class="label"><span class="label-text font-medium">Tu ubicación</span></label>
-                <div class="join w-full">
-                  <input type="text" id="input-ubicacion" placeholder="Domicilio o barrio (opcional)" class="input join-item w-full" />
-                  <button class="btn btn-secondary join-item" id="btn-milocalizacion" title="Usar mi ubicación (GPS)">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                  </button>
-                </div>
-                <label class="label"><span class="label-text-alt text-base-content/50" id="label-ubicacion">Podés también hacer clic en el mapa para marcar tu ubicación.</span></label>
-              </div>
-
-              <!-- Categoría -->
-              <div class="form-control w-full">
-                <label class="label"><span class="label-text font-medium">Categoría</span></label>
-                <select id="select-categoria" class="select w-full">
-                  <option value="">Todas las categorías</option>
-                </select>
-              </div>
-
-              <!-- Subcategoría -->
-              <div class="form-control w-full">
-                <label class="label"><span class="label-text font-medium">Servicio / disciplina</span></label>
-                <select id="select-subcategoria" class="select w-full">
-                  <option value="">Todos los servicios</option>
-                </select>
-              </div>
-
-              <!-- Municipio -->
-              <div class="form-control w-full">
-                <label class="label"><span class="label-text font-medium">Municipio</span></label>
-                <select id="select-municipio" class="select w-full">
-                  <option value="">Toda la región</option>
-                </select>
-              </div>
-
-              <!-- Búsqueda libre -->
-              <div class="form-control w-full">
-                <label class="label"><span class="label-text font-medium">Búsqueda por texto</span></label>
-                <input type="text" id="input-busqueda" placeholder="Ej: pediatría, VIH, mamografía…" class="input w-full" />
-              </div>
-
-              <div class="card-actions justify-end mt-1">
-                <button class="btn btn-ghost btn-sm" id="btn-limpiar">Limpiar filtros</button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Resultados -->
-          <div class="card bg-base-200 shadow-sm flex-1">
-            <div class="card-body gap-2">
-              <div class="flex items-center justify-between">
-                <h2 class="card-title text-lg">Resultados</h2>
-                <span class="badge badge-neutral" id="badge-resultados">0</span>
-              </div>
-              <div id="lista-resultados" class="flex flex-col gap-2 max-h-[520px] overflow-y-auto pr-1">
-                <div class="text-sm text-base-content/50 p-4 text-center" id="placeholder-resultados">
-                  Cargando datos…
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Columna derecha: mapa -->
-        <div class="lg:col-span-8 xl:col-span-8">
-          <div class="card bg-base-200 shadow-sm">
-            <div class="card-body p-0 relative">
-              <div id="mapa" class="w-full h-[420px] md:h-[560px] lg:h-[640px] rounded-box"></div>
-              <!-- Leyenda del mapa -->
-              <div class="absolute bottom-3 left-3 z-[500] flex flex-col gap-1.5 text-xs bg-base-200/90 backdrop-blur rounded-box p-3 shadow-md" id="leyenda-mapa"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Nota metodológica -->
-      <section class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4" id="notas-metodologia"></section>
-    </main>
-
-    <!-- ============================ FOOTER ============================ -->
-    <footer class="footer sm:footer-horizontal footer-center bg-base-200 text-base-content/70 border-t border-base-300 p-8">
-      <aside>
-        <img src="./assets/img/logo-unahur-blanco.png" alt="UNAHUR" class="h-9 w-auto inline-block mb-2" />
-        <p class="font-semibold text-base-content">Panel de Salud Comunitaria · Región Sanitaria VII</p>
-        <p class="text-sm max-w-xl">
-          Proyecto interdisciplinario entre estudiantes de Salud Comunitaria y de Inteligencia Artificial.
-          Prototipo demostrativo elaborado para las Jornadas de Salud Comunitaria.
-        </p>
-        <p class="text-xs mt-2">Versión DEMO · <a href="https://piaunahuradmin.github.io/mapa-salud-comunitaria/" target="_blank" class="link link-hover text-primary">Sitio web online</a> · Los datos no sustituyen la consulta oficial · Georreferenciación aproximada</p>
-      </aside>
-    </footer>
-
-    <!-- ============================ MODAL CÓMO LLEGAR ============================ -->
-    <dialog id="modal-como-llegar" class="modal">
-      <div class="modal-box max-w-2xl bg-base-200 text-base-content border border-base-300 shadow-2xl rounded-2xl p-6 relative">
-        <!-- Botón X circular visible en el borde superior derecho -->
-        <button type="button" onclick="document.getElementById('modal-como-llegar').close()" class="btn-modal-close-x" title="Cerrar ventana" aria-label="Cerrar">✕</button>
-
-        <!-- Cabecera -->
-        <div class="flex items-center gap-3 pr-12">
-          <div class="h-10 w-10 rounded-xl bg-emerald-500/15 flex items-center justify-center text-xl shrink-0">
-            🚌
-          </div>
-          <div>
-            <h3 class="font-bold text-lg text-white tracking-tight">
-              Cómo llegar en Colectivo
-            </h3>
-            <p class="text-xs text-base-content/60 mt-0.5" id="modal-ruteo-subtitulo">Trayecto y líneas sugeridas</p>
-          </div>
-        </div>
-
-        <div class="mt-4 space-y-3" id="modal-ruteo-contenido">
-          <!-- Contenido generado dinámicamente -->
-        </div>
-
-        <!-- Botones de Acción (Ancho completo, 1/3 cada uno con gap y aspecto de botón con hover) -->
-        <div class="grid grid-cols-3 gap-3 w-full border-t border-base-300 pt-4 mt-5">
-          <a id="btn-gmaps-transit" href="#" target="_blank" class="btn-accion-modal btn-accion-gmaps">
-            Google Maps
-          </a>
-
-          <a id="btn-moovit" href="#" target="_blank" class="btn-accion-modal btn-accion-moovit">
-            Moovit
-          </a>
-
-          <button type="button" onclick="document.getElementById('modal-como-llegar').close()" class="btn-accion-modal btn-accion-cerrar">
-            Cerrar
-          </button>
-        </div>
-      </div>
-      <form method="dialog" class="modal-backdrop bg-transparent">
-        <button>cerrar</button>
-      </form>
-    </dialog>
-
-    <!-- Datos y lógica -->
+    <!-- Carga de datos institucionales y Leaflet -->
     <script src="./data/efectores.js"></script>
     <script src="./data/municipios.js"></script>
     <script src="./data/taxonomia.js"></script>
     <script src="./data/colectivos.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- Lógica de aplicación adaptada al Manual UX/UI -->
     <script src="./assets/js/app.js"></script>
   </body>
 </html>
-

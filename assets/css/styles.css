@@ -1,0 +1,1634 @@
+/* ==========================================================================
+   Panel de Salud Comunitaria · UNAHUR
+   Manual de Estilo e Interfaz de Usuario (UX/UI v1.0)
+   Basado en especificaciones institucionales docs/UXUI.pdf
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+/* --- Tokens de diseño (UXUI.pdf Página 3 y 9) --- */
+:root {
+  --brand-gray: #58585a;
+  --brand-green: #5aa123;
+  --brand-cyan: #08a2c4;
+  --ink: #172b34;
+  --muted: #58585a;
+  --surface: #ffffff;
+  --surface-soft: #f2f7f8;
+  --line: #d7e1e4;
+  --control-border: #71828a;
+  --action: #347516;
+  --action-hover: #285b11;
+  --selected: #e5f1de;
+  --focus: #00677d;
+  --error: #b42318;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+
+  --radius-control: 8px;
+  --radius-card: 10px;
+  --radius-sheet: 16px;
+  --shadow-overlay: 0 4px 16px rgba(23, 43, 52, 0.12);
+  --shadow-card: 0 2px 8px rgba(23, 43, 52, 0.06);
+  --shadow-modal: 0 16px 36px rgba(23, 43, 52, 0.2);
+
+  --font-ui: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+  --transition-fast: 150ms ease;
+  --header-height: 68px;
+  --bottom-nav-height: 64px;
+}
+
+/* --- Reseteo y Base --- */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+  background-color: var(--surface);
+  color: var(--ink);
+}
+
+body {
+  font-family: var(--font-ui);
+  background-color: var(--surface);
+  color: var(--ink);
+  line-height: 1.5;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+}
+
+/* Foco accesible estricto (Página 8 y 9) */
+:where(button, a, input, select, textarea, [tabindex]):focus-visible {
+  outline: 3px solid var(--focus) !important;
+  outline-offset: 3px !important;
+}
+
+button, input, select, textarea {
+  font: inherit;
+  color: inherit;
+}
+
+a {
+  color: var(--action);
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+/* Utilidad para lectores de pantalla */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ==========================================================================
+   COMPONENTES BASE (UXUI.pdf Página 5 y 9)
+   ========================================================================== */
+
+/* Botones */
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 48px;
+  padding: 12px 16px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  font-weight: 600;
+  font-size: 0.95rem;
+  line-height: 1.2;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background-color var(--transition-fast), border-color var(--transition-fast), transform var(--transition-fast);
+  user-select: none;
+}
+.button:active {
+  transform: scale(0.98);
+}
+.button--primary {
+  background-color: var(--action);
+  color: #ffffff;
+}
+.button--primary:hover:not(:disabled) {
+  background-color: var(--action-hover);
+  color: #ffffff;
+  text-decoration: none;
+}
+.button--secondary {
+  background-color: #ffffff;
+  color: var(--action);
+  border-color: var(--action);
+}
+.button--secondary:hover:not(:disabled) {
+  background-color: var(--selected);
+  color: var(--action);
+  text-decoration: none;
+}
+.button--ghost {
+  background-color: transparent;
+  color: var(--ink);
+  border-color: transparent;
+}
+.button--ghost:hover:not(:disabled) {
+  background-color: var(--surface-soft);
+}
+.button:disabled {
+  background-color: #e5e7eb;
+  color: var(--muted);
+  border-color: #e5e7eb;
+  cursor: not-allowed;
+}
+
+/* Botón de ícono (44x44px mínimo táctil) */
+.icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: var(--radius-control);
+  border: 1px solid var(--line);
+  background-color: #ffffff;
+  color: var(--ink);
+  cursor: pointer;
+  transition: background-color var(--transition-fast), border-color var(--transition-fast);
+}
+.icon-button:hover {
+  background-color: var(--surface-soft);
+  border-color: var(--control-border);
+}
+
+/* Campos de entrada y Buscador */
+.search-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+.search-input {
+  width: 100%;
+  min-height: 48px;
+  padding: 12px 44px 12px 42px;
+  background-color: #ffffff;
+  border: 1.5px solid var(--control-border);
+  border-radius: var(--radius-control);
+  font-size: 1rem;
+  color: var(--ink);
+  outline: none;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+.search-input::placeholder {
+  color: #71828a;
+  opacity: 1;
+}
+.search-input:focus {
+  border-color: var(--focus);
+}
+.search-icon {
+  position: absolute;
+  left: 14px;
+  color: var(--brand-gray);
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+}
+.search-clear-btn {
+  position: absolute;
+  right: 10px;
+  background: none;
+  border: none;
+  color: var(--brand-gray);
+  cursor: pointer;
+  padding: 6px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+}
+.search-clear-btn.visible {
+  display: flex;
+}
+.search-clear-btn:hover {
+  color: var(--ink);
+}
+
+/* Badges y Chips */
+.badge-caps {
+  display: inline-flex;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background-color: var(--selected);
+  color: var(--action);
+  line-height: 1.2;
+}
+.badge-hospital {
+  display: inline-flex;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background-color: #e0f6fc;
+  color: #056a80;
+  line-height: 1.2;
+}
+.badge-other {
+  display: inline-flex;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background-color: var(--surface-soft);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  line-height: 1.2;
+}
+
+/* ==========================================================================
+   CABECERA INSTITUCIONAL (UXUI.pdf Página 3 y 4)
+   ========================================================================== */
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  height: var(--header-height);
+  background-color: #ffffff;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  padding: 0 var(--space-4);
+  box-shadow: 0 1px 4px rgba(23, 43, 52, 0.04);
+}
+.site-header-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.brand-link {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  text-decoration: none;
+  color: var(--ink);
+}
+.brand-logo-img {
+  width: 135px;
+  height: auto;
+  max-height: 44px;
+  object-fit: contain;
+  display: block;
+}
+@media (min-width: 768px) {
+  .brand-logo-img {
+    width: 175px;
+    max-height: 48px;
+  }
+}
+.brand-title-wrap {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+  border-left: 1px solid var(--line);
+  padding-left: var(--space-3);
+}
+.brand-title {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--ink);
+}
+.brand-subtitle {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+.header-nav {
+  display: none;
+  align-items: center;
+  gap: var(--space-2);
+}
+@media (min-width: 1024px) {
+  .header-nav {
+    display: flex;
+  }
+}
+.header-nav-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: var(--radius-control);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--ink);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+.header-nav-btn:hover {
+  background-color: var(--surface-soft);
+  color: var(--action);
+}
+.header-nav-btn.active {
+  background-color: var(--selected);
+  color: var(--action);
+}
+.fav-badge-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--action);
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 9999px;
+  min-width: 18px;
+  height: 18px;
+  line-height: 1;
+}
+.mobile-menu-btn {
+  display: inline-flex;
+  background: none;
+  border: none;
+  color: var(--ink);
+  padding: 8px;
+  cursor: pointer;
+  border-radius: var(--radius-control);
+}
+@media (min-width: 1024px) {
+  .mobile-menu-btn {
+    display: none;
+  }
+}
+
+/* ==========================================================================
+   VISTA 1: INICIO (Página 1, 2, 4)
+   ========================================================================== */
+.view-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.view-container.hidden {
+  display: none !important;
+}
+
+.home-section {
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+  padding: var(--space-6) var(--space-4);
+}
+@media (min-width: 768px) {
+  .home-section {
+    padding: var(--space-8) var(--space-6);
+  }
+}
+
+/* Título principal con bloque verde o acento verde */
+.hero-header {
+  margin-bottom: var(--space-6);
+}
+.hero-title {
+  font-size: 28px;
+  line-height: 1.08;
+  font-weight: 800;
+  color: var(--ink);
+  letter-spacing: -0.02em;
+}
+@media (min-width: 768px) {
+  .hero-title {
+    font-size: 40px;
+  }
+}
+.hero-title-highlight {
+  color: var(--brand-green);
+  display: inline-block;
+  position: relative;
+}
+.hero-subtitle {
+  font-size: 1rem;
+  color: var(--muted);
+  margin-top: var(--space-2);
+}
+@media (min-width: 768px) {
+  .hero-subtitle {
+    font-size: 1.15rem;
+  }
+}
+
+/* Buscador en el Hero */
+.hero-search-box {
+  margin-top: var(--space-6);
+  margin-bottom: var(--space-8);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-width: 760px;
+}
+.hero-search-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+/* Categorías (8 categorías en cuadrícula: 2 cols móvil, 4 cols escritorio) */
+.categories-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: var(--space-4);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+@media (min-width: 768px) {
+  .categories-title {
+    font-size: 20px;
+  }
+}
+.categories-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: var(--space-8);
+}
+@media (min-width: 768px) {
+  .categories-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* Tarjeta de categoría (Página 5) */
+.category-card {
+  min-height: 104px;
+  padding: 16px;
+  background-color: var(--surface-soft);
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius-card);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: space-between;
+  text-align: left;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  color: var(--ink);
+  outline: none;
+  position: relative;
+}
+.category-card:hover {
+  background-color: #ebf3f5;
+  border-color: var(--control-border);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-card);
+}
+.category-card.selected {
+  background-color: var(--selected);
+  border-color: var(--action);
+  box-shadow: 0 0 0 1px var(--action);
+}
+.category-card-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background-color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--action);
+  box-shadow: 0 1px 3px rgba(23, 43, 52, 0.08);
+  margin-bottom: 8px;
+}
+.category-card.selected .category-card-icon {
+  background-color: var(--action);
+  color: #ffffff;
+}
+.category-card-name {
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.25;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Stats institucionales */
+.stats-banner {
+  background-color: var(--surface-soft);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  padding: var(--space-4) var(--space-6);
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-4);
+  margin-top: var(--space-6);
+}
+@media (min-width: 768px) {
+  .stats-banner {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+.stat-item {
+  display: flex;
+  flex-direction: column;
+}
+.stat-item-number {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--action);
+  line-height: 1.1;
+}
+.stat-item-label {
+  font-size: 0.825rem;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+/* ==========================================================================
+   VISTA 2: MAPA Y RESULTADOS (Página 1, 4, 6)
+   ========================================================================== */
+.map-view-layout {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - var(--header-height));
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+}
+@media (min-width: 1024px) {
+  .map-view-layout {
+    flex-direction: row;
+  }
+}
+
+/* Barra lateral / Columna izquierda en escritorio (360px) */
+.map-sidebar {
+  width: 100%;
+  height: 100%;
+  background-color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  z-index: 20;
+}
+@media (min-width: 1024px) {
+  .map-sidebar {
+    width: 360px;
+    min-width: 360px;
+    max-width: 360px;
+    border-right: 1px solid var(--line);
+    box-shadow: 2px 0 8px rgba(23, 43, 52, 0.05);
+  }
+}
+
+/* Cabecera del sidebar */
+.sidebar-header {
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--line);
+  background-color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.sidebar-back-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.sidebar-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  color: var(--action);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 0;
+}
+.sidebar-back-btn:hover {
+  text-decoration: underline;
+}
+
+/* Filtros por chips horizontales */
+.category-chips-scroll {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 4px 0;
+  scrollbar-width: none;
+}
+.category-chips-scroll::-webkit-scrollbar {
+  display: none;
+}
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border-radius: 9999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  background-color: var(--surface-soft);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+.filter-chip:hover {
+  background-color: #ebf3f5;
+  border-color: var(--control-border);
+}
+.filter-chip.active {
+  background-color: var(--selected);
+  color: var(--action);
+  border-color: var(--action);
+}
+
+/* Selector de Municipio sobrio */
+.select-municipio-input {
+  width: 100%;
+  min-height: 38px;
+  padding: 6px 12px;
+  background-color: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  font-size: 0.875rem;
+  color: var(--ink);
+  outline: none;
+}
+.select-municipio-input:focus {
+  border-color: var(--focus);
+}
+
+/* Barra de resultados y orden */
+.results-meta-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px var(--space-4);
+  background-color: var(--surface-soft);
+  border-bottom: 1px solid var(--line);
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.results-count-text {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* Contenedor de la lista con scroll independiente */
+.results-list-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0;
+}
+
+/* Fila de resultado (UXUI.pdf Página 5) */
+.result-card-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 16px;
+  border-bottom: 1px solid var(--line);
+  background-color: #ffffff;
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+  text-align: left;
+  border-left: 3px solid transparent;
+  outline: none;
+  width: 100%;
+  border-right: none;
+  border-top: none;
+}
+.result-card-item:hover {
+  background-color: var(--surface-soft);
+}
+.result-card-item.active {
+  background-color: var(--selected);
+  border-left-color: var(--action);
+}
+.result-icon-badge {
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--surface-soft);
+  color: var(--action);
+  border: 1px solid var(--line);
+}
+.result-icon-badge.caps {
+  background-color: var(--selected);
+  color: var(--action);
+}
+.result-icon-badge.hospital {
+  background-color: #e0f6fc;
+  color: var(--brand-cyan);
+}
+.result-info {
+  flex: 1;
+  min-width: 0;
+}
+.result-title {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--ink);
+  margin-bottom: 2px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.result-meta-row {
+  font-size: 13px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  line-height: 1.3;
+}
+.result-distance {
+  color: var(--action);
+  font-weight: 600;
+}
+.result-hours {
+  font-size: 12px;
+  color: #71828a;
+  margin-top: 2px;
+}
+.result-actions-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.fav-toggle-btn {
+  background: none;
+  border: none;
+  color: var(--brand-gray);
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform var(--transition-fast), color var(--transition-fast);
+}
+.fav-toggle-btn:hover {
+  color: #ef4444;
+  transform: scale(1.15);
+}
+.fav-toggle-btn.saved {
+  color: #ef4444;
+}
+.chevron-icon {
+  color: var(--line);
+  transition: transform var(--transition-fast), color var(--transition-fast);
+}
+.result-card-item:hover .chevron-icon {
+  color: var(--ink);
+  transform: translateX(2px);
+}
+
+/* Área del Mapa */
+.map-area-container {
+  flex: 1;
+  height: 100%;
+  position: relative;
+  background-color: #e8ecef;
+}
+#mapa {
+  width: 100%;
+  height: 100%;
+}
+
+/* Controles flotantes del mapa (Página 6) */
+.map-floating-controls {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 500;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.map-control-btn {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  background-color: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink);
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(23, 43, 52, 0.12);
+  transition: background-color var(--transition-fast), transform var(--transition-fast);
+}
+.map-control-btn:hover {
+  background-color: var(--surface-soft);
+  transform: translateY(-1px);
+}
+.map-control-btn:active {
+  transform: scale(0.96);
+}
+
+/* Leyenda flotante del mapa */
+.map-legend-box {
+  position: absolute;
+  bottom: 24px;
+  left: 16px;
+  z-index: 500;
+  background-color: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(4px);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  padding: 10px 14px;
+  box-shadow: 0 4px 12px rgba(23, 43, 52, 0.08);
+  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.legend-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 9999px;
+  border: 1.5px solid #ffffff;
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.15);
+}
+.legend-dot.caps {
+  background-color: var(--brand-green);
+}
+.legend-dot.hospital {
+  background-color: var(--brand-cyan);
+}
+.legend-dot.user {
+  background-color: #2563eb;
+}
+
+/* Panel móvil deslizante (Bottom Sheet, UXUI.pdf Página 6) */
+.mobile-bottom-sheet {
+  display: none;
+}
+@media (max-width: 1023px) {
+  .map-sidebar {
+    display: none;
+  }
+  .mobile-bottom-sheet {
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    bottom: var(--bottom-nav-height);
+    left: 0;
+    right: 0;
+    z-index: 600;
+    background-color: #ffffff;
+    border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
+    box-shadow: 0 -4px 16px rgba(23, 43, 52, 0.12);
+    border-top: 1px solid var(--line);
+    height: 38dvh;
+    max-height: 75dvh;
+    transition: height 220ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .mobile-bottom-sheet.expanded {
+    height: 75dvh;
+  }
+  .sheet-handle-bar {
+    padding: 8px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--line);
+    background-color: #ffffff;
+    border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
+  }
+  .sheet-pull-handle {
+    width: 36px;
+    height: 4px;
+    border-radius: 9999px;
+    background-color: #d7e1e4;
+    margin: 0 auto;
+  }
+  .mobile-search-floating-bar {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    right: 68px;
+    z-index: 500;
+  }
+}
+
+/* ==========================================================================
+   VISTA 3: FICHA DE ESTABLECIMIENTO (UXUI.pdf Página 7)
+   ========================================================================== */
+.ficha-view-container {
+  max-width: 960px;
+  margin: 0 auto;
+  width: 100%;
+  padding: var(--space-4);
+  padding-bottom: calc(var(--bottom-nav-height) + 24px);
+}
+@media (min-width: 768px) {
+  .ficha-view-container {
+    padding: var(--space-6) var(--space-6);
+  }
+}
+
+.ficha-back-bar {
+  margin-bottom: var(--space-4);
+}
+.ficha-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  color: var(--action);
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 6px 0;
+}
+.ficha-back-btn:hover {
+  text-decoration: underline;
+}
+
+/* Contenedor principal de la ficha */
+.ficha-card {
+  background-color: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+
+/* Fotografía (16:9 en móvil, franja 3:1 en escritorio) */
+.ficha-photo-container {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: linear-gradient(135deg, #eef5f7 0%, #dbe8ec 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  border-bottom: 1px solid var(--line);
+}
+@media (min-width: 768px) {
+  .ficha-photo-container {
+    aspect-ratio: 3 / 1;
+    max-height: 240px;
+  }
+}
+.ficha-photo-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: var(--brand-gray);
+  text-align: center;
+  padding: var(--space-4);
+}
+.ficha-photo-placeholder svg {
+  width: 48px;
+  height: 48px;
+  color: var(--action);
+  opacity: 0.8;
+}
+.ficha-photo-badge {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted);
+  background-color: rgba(255, 255, 255, 0.85);
+  padding: 4px 10px;
+  border-radius: 9999px;
+  border: 1px solid var(--line);
+}
+
+/* Cuerpo de la ficha */
+.ficha-body {
+  padding: var(--space-4);
+}
+@media (min-width: 768px) {
+  .ficha-body {
+    padding: var(--space-6);
+  }
+}
+
+.ficha-header-block {
+  margin-bottom: var(--space-6);
+  border-bottom: 1px solid var(--line);
+  padding-bottom: var(--space-4);
+}
+.ficha-title {
+  font-size: 24px;
+  line-height: 1.2;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: var(--space-2);
+}
+@media (min-width: 768px) {
+  .ficha-title {
+    font-size: 28px;
+  }
+}
+.ficha-category-badge {
+  display: inline-block;
+  margin-bottom: var(--space-2);
+}
+
+/* Grid de datos de contacto */
+.ficha-contact-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-3);
+  margin-bottom: var(--space-6);
+}
+@media (min-width: 768px) {
+  .ficha-contact-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+.contact-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  font-size: 0.95rem;
+  color: var(--ink);
+}
+.contact-item-icon {
+  width: 24px;
+  height: 24px;
+  color: var(--action);
+  shrink: 0;
+  margin-top: 2px;
+}
+
+/* Servicios disponibles */
+.ficha-section-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: var(--space-3);
+  margin-top: var(--space-6);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.services-list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-2);
+  margin-bottom: var(--space-6);
+}
+@media (min-width: 768px) {
+  .services-list {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+.service-check-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  color: var(--ink);
+  background-color: var(--surface-soft);
+  padding: 8px 12px;
+  border-radius: var(--radius-control);
+  border: 1px solid var(--line);
+}
+.service-check-icon {
+  color: var(--action);
+  font-weight: bold;
+}
+
+/* Accesibilidad e instalaciones */
+.accessibility-chips-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-8);
+}
+.acc-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 9999px;
+  background-color: var(--surface-soft);
+  color: var(--ink);
+  border: 1px solid var(--line);
+}
+
+/* Acciones principales de la ficha (Página 5 y 7) */
+.ficha-actions-bar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--line);
+}
+@media (min-width: 768px) {
+  .ficha-actions-bar {
+    flex-direction: row;
+    align-items: center;
+  }
+}
+.ficha-actions-bar .button--primary {
+  flex: 2;
+}
+.ficha-actions-bar .button--secondary {
+  flex: 1;
+}
+
+/* ==========================================================================
+   VISTA 4: MIS FAVORITOS (UXUI.pdf Página 7)
+   ========================================================================== */
+.favoritos-view-container {
+  max-width: 840px;
+  margin: 0 auto;
+  width: 100%;
+  padding: var(--space-6) var(--space-4);
+  padding-bottom: calc(var(--bottom-nav-height) + 24px);
+}
+.favoritos-header {
+  margin-bottom: var(--space-6);
+}
+.favoritos-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--ink);
+}
+@media (min-width: 768px) {
+  .favoritos-title {
+    font-size: 28px;
+  }
+}
+.favoritos-desc {
+  font-size: 0.95rem;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+.favoritos-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.empty-favorites-box {
+  background-color: var(--surface-soft);
+  border: 1px dashed var(--control-border);
+  border-radius: var(--radius-card);
+  padding: var(--space-12) var(--space-6);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+}
+.empty-fav-icon {
+  width: 56px;
+  height: 56px;
+  color: var(--brand-gray);
+  opacity: 0.6;
+}
+.empty-fav-text {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* ==========================================================================
+   MENÚ DRAWER LATERAL (UXUI.pdf Página 7)
+   ========================================================================== */
+.drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(23, 43, 52, 0.4);
+  backdrop-filter: blur(2px);
+  z-index: 1500;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--transition-fast);
+}
+.drawer-backdrop.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+.drawer-sidebar {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 300px;
+  max-width: 85vw;
+  background-color: #ffffff;
+  z-index: 1501;
+  transform: translateX(100%);
+  transition: transform 220ms ease;
+  display: flex;
+  flex-direction: column;
+  box-shadow: -4px 0 24px rgba(23, 43, 52, 0.15);
+}
+.drawer-sidebar.open {
+  transform: translateX(0);
+}
+.drawer-header {
+  padding: var(--space-4);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--line);
+}
+.drawer-body {
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  flex: 1;
+  overflow-y: auto;
+}
+.drawer-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: var(--radius-control);
+  font-weight: 600;
+  color: var(--ink);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background-color var(--transition-fast);
+  width: 100%;
+}
+.drawer-link:hover {
+  background-color: var(--surface-soft);
+  text-decoration: none;
+}
+.drawer-link.active {
+  background-color: var(--selected);
+  color: var(--action);
+}
+.drawer-divider {
+  height: 1px;
+  background-color: var(--line);
+  margin: var(--space-3) 0;
+}
+
+/* ==========================================================================
+   BARRA DE NAVEGACIÓN INFERIOR (MÓVIL, UXUI.pdf Página 5)
+   ========================================================================== */
+.bottom-nav-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: var(--bottom-nav-height);
+  background-color: #ffffff;
+  border-top: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  z-index: 1100;
+  box-shadow: 0 -2px 10px rgba(23, 43, 52, 0.05);
+}
+@media (min-width: 1024px) {
+  .bottom-nav-bar {
+    display: none;
+  }
+}
+.bottom-nav-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  height: 100%;
+  background: none;
+  border: none;
+  color: var(--brand-gray);
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color var(--transition-fast);
+  text-decoration: none;
+  position: relative;
+}
+.bottom-nav-item.active {
+  color: var(--action);
+  font-weight: 700;
+}
+.bottom-nav-badge {
+  position: absolute;
+  top: 6px;
+  right: calc(50% - 18px);
+  background-color: var(--action);
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: bold;
+  padding: 1px 5px;
+  border-radius: 9999px;
+  line-height: 1;
+}
+
+/* ==========================================================================
+   AVISOS FLOTANTES / TOAST (UXUI.pdf Página 5, role="status")
+   ========================================================================== */
+.toast-notification {
+  position: fixed;
+  bottom: calc(var(--bottom-nav-height) + 16px);
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background-color: #172b34;
+  color: #ffffff;
+  padding: 12px 20px;
+  border-radius: var(--radius-control);
+  font-size: 0.9rem;
+  font-weight: 600;
+  box-shadow: var(--shadow-modal);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  opacity: 0;
+  transition: transform 200ms ease, opacity 200ms ease;
+  pointer-events: none;
+}
+@media (min-width: 1024px) {
+  .toast-notification {
+    bottom: 24px;
+    right: 24px;
+    left: auto;
+    transform: translateY(100px);
+  }
+}
+.toast-notification.show {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+@media (min-width: 1024px) {
+  .toast-notification.show {
+    transform: translateY(0);
+  }
+}
+.toast-undo-btn {
+  background: none;
+  border: none;
+  color: #a3e635;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 2px 4px;
+}
+
+/* ==========================================================================
+   MODAL CÓMO LLEGAR (RESTILADO SOBRIO E INSTITUCIONAL)
+   ========================================================================== */
+.modal-backdrop-custom {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(23, 43, 52, 0.45);
+  backdrop-filter: blur(2px);
+  z-index: 1600;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.modal-backdrop-custom.open {
+  display: flex;
+}
+.modal-dialog-box {
+  background-color: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sheet);
+  box-shadow: var(--shadow-modal);
+  max-width: 640px;
+  width: 100%;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+.modal-header {
+  padding: var(--space-4) var(--space-6);
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.modal-header-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.modal-body {
+  padding: var(--space-6);
+  overflow-y: auto;
+  flex: 1;
+}
+.modal-footer {
+  padding: var(--space-4) var(--space-6);
+  border-top: 1px solid var(--line);
+  background-color: var(--surface-soft);
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-3);
+}
+
+/* ==========================================================================
+   ESTILOS LEAFLET PERSONALIZADOS (TEMA CLARO INSTITUCIONAL)
+   ========================================================================== */
+.leaflet-container {
+  background-color: #f2f7f8 !important;
+  font-family: var(--font-ui) !important;
+}
+.leaflet-tile {
+  filter: saturate(0.9) contrast(1.02);
+}
+.leaflet-popup-content-wrapper {
+  background: #ffffff !important;
+  color: var(--ink) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: var(--radius-card) !important;
+  box-shadow: 0 8px 24px rgba(23, 43, 52, 0.14) !important;
+  padding: 2px !important;
+}
+.leaflet-popup-content {
+  margin: 12px 14px !important;
+  line-height: 1.4 !important;
+  color: var(--ink) !important;
+}
+.leaflet-popup-tip {
+  background: #ffffff !important;
+}
+
+/* Marcadores Leaflet con icono */
+.custom-pin-caps {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 9999px;
+  background-color: var(--brand-green);
+  color: #ffffff;
+  border: 2px solid #ffffff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  transition: transform var(--transition-fast);
+}
+.custom-pin-hospital {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 9999px;
+  background-color: var(--brand-cyan);
+  color: #ffffff;
+  border: 2px solid #ffffff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  transition: transform var(--transition-fast);
+}
+.custom-pin-caps:hover, .custom-pin-hospital:hover {
+  transform: scale(1.15);
+}
+.custom-pin-selected {
+  outline: 3px solid var(--focus) !important;
+  outline-offset: 2px !important;
+  transform: scale(1.2) !important;
+  z-index: 999 !important;
+}
+
+/* Punto de usuario */
+.user-location-pin {
+  width: 18px;
+  height: 18px;
+  border-radius: 9999px;
+  background-color: #2563eb;
+  border: 3px solid #ffffff;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.35);
+}
+
+/* ==========================================================================
+   PANEL INTEGRADO DE RUTEO EN MAPA (CÓMO LLEGAR)
+   ========================================================================== */
+.sidebar-ruteo-box {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow-y: auto;
+  background-color: #ffffff;
+}
+.sidebar-ruteo-box.hidden {
+  display: none !important;
+}
+.ruteo-header-card {
+  padding: var(--space-4);
+  border-bottom: 1px solid var(--line);
+  background-color: var(--surface-soft);
+}
+.ruteo-body-card {
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  flex: 1;
+}
+.ruteo-step-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  font-size: 0.875rem;
+  line-height: 1.45;
+  color: var(--ink);
+}
+.ruteo-step-num {
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  border-radius: 9999px;
+  background-color: var(--selected);
+  color: var(--action);
+  font-weight: 700;
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 2px;
+}
+.ruteo-ext-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+/* ==========================================================================
+   ACCESIBILIDAD Y REDUCCIÓN DE MOVIMIENTO (UXUI.pdf Página 8 y 9)
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
