@@ -5,6 +5,17 @@ frontend se aclara explícitamente en la entrada.
 
 ---
 
+## 2026-10-13 · Integración con la interfaz nueva ("uxui cambiada")
+
+- Los commits de datos se reubicaron encima de `main` (interfaz nueva). **La interfaz no se tocó**:
+  `app.js` e `index.html` quedan exactamente como en `main`.
+- Los cambios de `app.js` descriptos en los pasos 1 y 2 (filtro por `servicios`, búsqueda sin tildes)
+  eran para la interfaz anterior y **ya no aplican**.
+- Probado: la interfaz nueva carga los 242 establecimientos y los filtros funcionan sin errores.
+- Pendiente para frontend: la interfaz nueva no lee el campo `servicios` (ver notas al equipo).
+
+---
+
 ## 2026-10-13 · Paso 3b: establecimientos de `RawData` que faltaban
 
 Se revisó **todo `RawData`** buscando establecimientos de la RS VII que no estuvieran en el panel.
