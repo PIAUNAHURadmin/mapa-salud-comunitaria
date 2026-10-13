@@ -14,6 +14,14 @@
 
   // ---------------------------------------------------------------- Utilidades
   const $ = (id) => document.getElementById(id);
+  const setText = (id, text) => {
+    const el = $(id);
+    if (el) el.textContent = text;
+  };
+  const setHtml = (id, html) => {
+    const el = $(id);
+    if (el) el.innerHTML = html;
+  };
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
   function haversineKm(lat1, lon1, lat2, lon2) {
@@ -249,11 +257,11 @@
         }
       });
       res.sort((a, b) => a._dist - b._dist);
-      $("sidebar-orden-label").textContent = "Orden: por cercanía (GPS)";
+      setText("sidebar-orden-label", "Orden: por cercanía (GPS)");
     } else {
       res.forEach((r) => { delete r._dist; });
       res.sort((a, b) => a.partido.localeCompare(b.partido) || a.nombre.localeCompare(b.nombre));
-      $("sidebar-orden-label").textContent = "Orden: alfabético";
+      setText("sidebar-orden-label", "Orden: alfabético");
     }
 
     renderResultados(res);
@@ -426,26 +434,30 @@
     if (listEl) state.scrollPrevioResultados = listEl.scrollTop;
 
     // Actualizar campos de la Ficha
-    $("ficha-nombre").textContent = r.nombre;
-    $("ficha-partido-subtitle").textContent = `${r.partido} · Región Sanitaria VII`;
-    $("ficha-domicilio").textContent = r.domicilio || "Dirección no especificada";
+    setText("ficha-nombre", r.nombre);
+    setText("ficha-partido-subtitle", `${r.partido} · Región Sanitaria VII`);
+    setText("ficha-domicilio", r.domicilio || "Dirección no especificada");
 
     const distWrap = $("ficha-distancia-wrap");
-    if (r._dist != null && isFinite(r._dist)) {
-      distWrap.textContent = `📍 A ${formatDistancia(r._dist)} de tu ubicación`;
-      distWrap.style.display = "block";
-    } else {
-      distWrap.style.display = "none";
+    if (distWrap) {
+      if (r._dist != null && isFinite(r._dist)) {
+        distWrap.textContent = `📍 A ${formatDistancia(r._dist)} de tu ubicación`;
+        distWrap.style.display = "block";
+      } else {
+        distWrap.style.display = "none";
+      }
     }
 
     const telEl = $("ficha-telefono");
-    if (r.telefono && r.telefono !== "-" && r.telefono.trim().length > 2) {
-      telEl.innerHTML = `<a href="tel:${esc(r.telefono.replace(/[^\d+]/g, ""))}" style="font-weight: 600;">📞 ${esc(r.telefono)}</a>`;
-    } else {
-      telEl.innerHTML = `<span style="color: var(--muted);">Teléfono no informado</span>`;
+    if (telEl) {
+      if (r.telefono && r.telefono !== "-" && r.telefono.trim().length > 2) {
+        telEl.innerHTML = `<a href="tel:${esc(r.telefono.replace(/[^\d+]/g, ""))}" style="font-weight: 600;">📞 ${esc(r.telefono)}</a>`;
+      } else {
+        telEl.innerHTML = `<span style="color: var(--muted);">Teléfono no informado</span>`;
+      }
     }
 
-    $("ficha-horario").textContent = "Horario no informado"; // Criterio estricto Página 8
+    setText("ficha-horario", "Horario no informado"); // Criterio estricto Página 8
 
     // Badge de categoría
     const badgeCat = $("ficha-badge-cat");
@@ -1163,7 +1175,7 @@
     $("btn-mobile-sheet-list")?.addEventListener("click", () => {
       state.sheetExpandido = true;
       $("mobile-bottom-sheet")?.classList.add("expanded");
-      $("sheet-toggle-text").textContent = "Contraer resultados";
+      setText("sheet-toggle-text", "Contraer resultados");
     });
 
     // Botón volver desde Ruteo

@@ -15,7 +15,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
     <!-- Estilos de diseño según Manual UX/UI UNAHUR (docs/UXUI.pdf) -->
-    <link rel="stylesheet" href="./assets/css/styles.css" />
+    <link rel="stylesheet" href="./assets/css/styles.css?v=20261013-2" />
   </head>
   <body>
     <!-- ============================ CABECERA INSTITUCIONAL ============================ -->
@@ -594,6 +594,24 @@
       <button type="button" class="toast-undo-btn" id="btn-toast-undo" style="display: none;">Deshacer</button>
     </div>
 
+    <!-- Elementos ocultos para retrocompatibilidad con versiones cacheadas del script -->
+    <div id="stat-efectores" style="display:none"></div>
+    <div id="stat-municipios" style="display:none"></div>
+    <div id="stat-categorias" style="display:none"></div>
+    <div id="stat-visibles" style="display:none"></div>
+    <div id="badge-resultados" style="display:none"></div>
+    <div id="notas-metodologia" style="display:none"></div>
+    <div id="leyenda-mapa" style="display:none"></div>
+    <div id="btn-milocalizacion" style="display:none"></div>
+    <div id="input-ubicacion" style="display:none"></div>
+    <div id="input-busqueda" style="display:none"></div>
+    <div id="select-categoria" style="display:none"></div>
+    <div id="select-subcategoria" style="display:none"></div>
+    <div id="select-municipio" style="display:none"></div>
+    <div id="btn-limpiar" style="display:none"></div>
+    <div id="lista-resultados" style="display:none"></div>
+    <div id="label-ubicacion" style="display:none"></div>
+
     <!-- Carga de datos institucionales y Leaflet -->
     <script src="./data/efectores.js"></script>
     <script src="./data/municipios.js"></script>
@@ -601,7 +619,7 @@
     <script src="./data/colectivos.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-    <!-- Lógica de aplicación adaptada al Manual UX/UI -->
-    <script src="./assets/js/app.js"></script>
+    <!-- Lógica de aplicación adaptada al Manual UX/UI con control de versión anti-caché -->
+    <script src="./assets/js/app.js?v=20261013-2"></script>
   </body>
 </html>
