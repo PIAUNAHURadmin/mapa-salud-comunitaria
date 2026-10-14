@@ -1891,6 +1891,128 @@ a:hover {
   transform: translateY(-1px);
 }
 
+/* Tarjeta visual de puntos A (Origen) y B (Destino) */
+.ruteo-puntos-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background-color: var(--surface-soft);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  padding: 12px;
+}
+.ruteo-punto-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.punto-dot {
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 11px;
+  color: #ffffff;
+  margin-top: 1px;
+}
+.punto-dot-origen {
+  background-color: #10b981;
+}
+.punto-dot-destino {
+  background-color: #ef4444;
+}
+.punto-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.punto-label {
+  font-size: 0.675rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.punto-nombre {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.3;
+}
+.punto-sub {
+  font-size: 0.775rem;
+  color: var(--muted);
+  line-height: 1.25;
+}
+.ruteo-puntos-divider {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-left: 11px;
+  margin: -2px 0;
+}
+.ruteo-puntos-divider::before {
+  content: "";
+  width: 2px;
+  height: 16px;
+  background: repeating-linear-gradient(to bottom, #94a3b8 0, #94a3b8 3px, transparent 3px, transparent 6px);
+}
+.puntos-dist-badge {
+  font-size: 0.725rem;
+  font-weight: 700;
+  color: var(--action);
+  background-color: var(--selected);
+  padding: 2px 8px;
+  border-radius: 9999px;
+  border: 1px solid var(--action);
+}
+
+.ruteo-botones-directos {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 2px;
+}
+.btn-directo-viaje {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: var(--radius-control);
+  font-size: 0.875rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: all var(--transition-fast);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+.btn-directo-maps {
+  background-color: #0284c7;
+  color: #ffffff;
+  border: 1px solid #0369a1;
+}
+.btn-directo-maps:hover {
+  background-color: #0369a1;
+  color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(2, 132, 199, 0.3);
+}
+.btn-directo-moovit {
+  background-color: #ea580c;
+  color: #ffffff;
+  border: 1px solid #c2410c;
+}
+.btn-directo-moovit:hover {
+  background-color: #c2410c;
+  color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(234, 88, 12, 0.3);
+}
+
 @media (max-width: 1023px) {
   .floating-ruteo-panel {
     top: 10px;

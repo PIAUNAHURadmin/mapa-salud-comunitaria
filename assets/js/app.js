@@ -830,58 +830,98 @@
     const distKm = haversineKm(origenLat, origenLon, r.lat, r.lon);
     const distTexto = formatDistancia(distKm);
 
-    // 4. Limpiar cualquier traza previa en el mapa (no dibujamos rutas viales inventadas para colectivos)
+    // 4. Limpiar cualquier traza previa en el mapa
     if (lineaRutaMapa && map) {
       map.removeLayer(lineaRutaMapa);
       lineaRutaMapa = null;
     }
 
-    // 5. Encuadrar el mapa para mostrar tu punto de partida y el efector de salud
+    // 5. Asegurar ambos puntos marcados en el mapa (Punto A: Origen, Punto B: Destino)
     if (map) {
-      if (state.ubicacion) {
-        const bounds = L.latLngBounds([
-          [origenLat, origenLon],
-          [r.lat, r.lon]
-        ]);
-        map.fitBounds(bounds, { padding: [70, 70], maxZoom: 15 });
+      // Punto A: Marcar origen en el mapa si aún no existe
+      if (userMarker) {
+        userMarker.setLatLng([origenLat, origenLon]);
       } else {
-        map.setView([r.lat, r.lon], 15);
+        userMarker = L.marker([origenLat, origenLon], {
+          icon: L.divIcon({
+            className: "user-location-pin-wrap",
+            html: `<div class="user-location-pin" title="${esc(origenNombre)}"></div>`,
+            iconSize: [22, 22],
+            iconAnchor: [11, 11]
+          })
+        }).addTo(map);
       }
+      userMarker.bindPopup(`<strong>📍 Punto A (Origen):</strong><br>${esc(origenNombre)}`);
 
-      // Abrir popup en el destino
+      // Trazar línea guía recta discontinua entre Punto A y Punto B para ver ambos puntos conectados
+      lineaRutaMapa = L.polyline([
+        [origenLat, origenLon],
+        [r.lat, r.lon]
+      ], {
+        color: "#08a2c4",
+        weight: 3.5,
+        dashArray: "6, 8",
+        opacity: 0.85
+      }).addTo(map);
+
+      // Encuadrar el mapa para que ambos puntos sean perfectamente visibles
+      const bounds = L.latLngBounds([
+        [origenLat, origenLon],
+        [r.lat, r.lon]
+      ]);
+      map.fitBounds(bounds, { padding: [70, 70], maxZoom: 15 });
+
+      // Abrir popup en el destino (Punto B)
       const m = marcadores.find((item) => item.efector.nombre === r.nombre);
       if (m) m.marker.openPopup();
     }
 
-    setText("floating-ruteo-subtitulo", `${r.nombre} (${destinoPartido})`);
+    setText("floating-ruteo-subtitulo", `Punto A ➔ Punto B (~${distTexto})`);
 
-    // 6. Deep links oficiales de transporte público con coordenadas exactas
+    // 6. Deep links oficiales con AMBOS puntos (origen y destino) cargados
     const gmapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${origenLat},${origenLon}&destination=${r.lat},${r.lon}&travelmode=transit`;
-    const moovitUrl = `https://moovitapp.com/?from=${origenLat},${origenLon}&to=${r.lat},${r.lon}`;
+    const moovitUrl = `https://moovitapp.com/index/es/transporte_p%C3%Bublico-site_search?orig_lat=${origenLat}&orig_lng=${origenLon}&dest_lat=${r.lat}&dest_lng=${r.lon}`;
 
     const ruteoInfoHtml = `
-      <div style="background-color: var(--selected); padding: 12px; border-radius: var(--radius-control); border: 1px solid var(--action);">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-          <span style="font-size: 0.775rem; font-weight: 700; color: var(--action); text-transform: uppercase;">Destino</span>
-          <span style="font-size: 0.85rem; font-weight: 700; color: var(--ink);">~${distTexto}</span>
+      <div class="ruteo-puntos-card">
+        <div class="ruteo-punto-item">
+          <span class="punto-dot punto-dot-origen">A</span>
+          <div class="punto-info">
+            <span class="punto-label">PUNTO DE PARTIDA (ORIGEN)</span>
+            <strong class="punto-nombre">${esc(origenNombre)}</strong>
+          </div>
         </div>
-        <div style="font-size: 0.95rem; font-weight: 700; color: var(--ink); line-height: 1.25;">
-          ${esc(r.nombre)}
+
+        <div class="ruteo-puntos-divider">
+          <span class="puntos-dist-badge">📏 Distancia directa: ~${distTexto}</span>
         </div>
-        <div style="font-size: 0.8rem; color: var(--muted); margin-top: 3px;">
-          📍 ${esc(r.domicilio)} (${esc(destinoPartido)})
+
+        <div class="ruteo-punto-item">
+          <span class="punto-dot punto-dot-destino">B</span>
+          <div class="punto-info">
+            <span class="punto-label">PUNTO DE LLEGADA (DESTINO)</span>
+            <strong class="punto-nombre">${esc(r.nombre)}</strong>
+            <span class="punto-sub">📍 ${esc(r.domicilio)} (${esc(destinoPartido)})</span>
+          </div>
         </div>
       </div>
 
       <div style="background-color: var(--surface-soft); padding: 12px; border-radius: var(--radius-control); border: 1px solid var(--line); font-size: 0.825rem; color: var(--ink); line-height: 1.45;">
-        <strong style="display: flex; align-items: center; gap: 6px; color: var(--ink); margin-bottom: 6px;">
-          <span>🚌</span> Colectivos y paradas en tiempo real:
+        <strong style="display: flex; align-items: center; gap: 6px; color: var(--ink); margin-bottom: 4px;">
+          <span>🚌</span> Ver forma real de llegar en transporte público:
         </strong>
-        Para asegurar que veas <strong>únicamente las líneas de colectivo que realmente pasan por tu zona y llegan a este centro de salud</strong> (con paradas exactas, ramales específicos y horarios SUBE/CNRT en vivo), abrí el recorrido en las plataformas oficiales de transporte:
+        Para ver el trayecto real con las <strong>líneas de colectivo que realmente pasan por esa zona, paradas exactas y horarios en tiempo real</strong>, hacé clic en los enlaces con ambos puntos ya marcados:
       </div>
 
-      <div style="font-size: 0.75rem; color: var(--muted); line-height: 1.35; padding: 0 2px;">
-        <em>Origen: ${esc(origenNombre)}</em>
+      <div class="ruteo-botones-directos">
+        <a href="${gmapsUrl}" target="_blank" rel="noopener noreferrer" class="btn-directo-viaje btn-directo-maps">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+          Abrir en Google Maps (Colectivo)
+        </a>
+        <a href="${moovitUrl}" target="_blank" rel="noopener noreferrer" class="btn-directo-viaje btn-directo-moovit">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+          Abrir en Moovit
+        </a>
       </div>
     `;
 
@@ -892,7 +932,7 @@
     const btnMaps = $("btn-ruteo-maps");
     if (btnMaps) {
       btnMaps.href = gmapsUrl;
-      btnMaps.textContent = "Google Maps (Colectivo)";
+      btnMaps.textContent = "Google Maps";
     }
 
     const btnMoovit = $("btn-ruteo-moovit");
@@ -909,10 +949,6 @@
     if (mobileRuteoContainer) {
       mobileRuteoContainer.innerHTML = `
         ${ruteoInfoHtml}
-        <div style="margin-top: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-          <a href="${gmapsUrl}" target="_blank" rel="noopener noreferrer" class="btn-accion-ruteo btn-accion-ruteo-maps">Google Maps</a>
-          <a href="${moovitUrl}" target="_blank" rel="noopener noreferrer" class="btn-accion-ruteo btn-accion-ruteo-moovit">Moovit</a>
-        </div>
         <div style="margin-top: 10px;">
           <button type="button" class="button button--secondary" onclick="window.cerrarRuteoFlotante()" style="width: 100%; min-height: 40px;">
             Cerrar
