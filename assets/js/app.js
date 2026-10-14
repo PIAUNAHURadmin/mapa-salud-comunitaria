@@ -944,6 +944,24 @@
     const panelFlotante = $("panel-flotante-ruteo");
     if (panelFlotante) panelFlotante.classList.remove("hidden");
 
+    // 8. Abrir el popup modal centrado con ambos puntos marcados y enlaces a Maps y Moovit
+    const modal = $("modal-como-llegar-container");
+    const modalCuerpo = $("modal-ruteo-cuerpo");
+    if (modalCuerpo) {
+      modalCuerpo.innerHTML = ruteoInfoHtml;
+    }
+    const btnModalGmaps = $("btn-gmaps-link");
+    if (btnModalGmaps) {
+      btnModalGmaps.href = gmapsUrl;
+    }
+    const btnModalMoovit = $("btn-moovit-link");
+    if (btnModalMoovit) {
+      btnModalMoovit.href = moovitUrl;
+    }
+    if (modal) {
+      modal.classList.add("open");
+    }
+
     // Sincronizar en móvil si corresponde
     const mobileRuteoContainer = $("mobile-ruteo-container");
     if (mobileRuteoContainer) {
