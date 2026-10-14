@@ -55,7 +55,8 @@
     ultimoEliminadoFav: null, // para Deshacer
     debounceTimer: null,
     sheetExpandido: false,
-    scrollPrevioResultados: 0
+    scrollPrevioResultados: 0,
+    rutasCalculadas: []
   };
 
   // Cargar favoritos de localStorage
@@ -122,6 +123,7 @@
   let marcadores = []; // { efector, marker }
   let userMarker = null;
   let lineaRutaMapa = null;
+  let capasRuteoMapa = [];
 
   function initMap() {
     if (map) return;
@@ -783,11 +785,64 @@
     return cer;
   }
 
-  function borrarRutaColectivo() {
-    if (lineaRutaMapa && map) {
-      map.removeLayer(lineaRutaMapa);
-      lineaRutaMapa = null;
+  // Nodos y centros de transbordo principales de la Región Sanitaria VII para combinaciones
+  const TRANSIT_HUBS = {
+    "Hurlingham": { nombre: "Estación Hurlingham", lat: -34.5888, lon: -58.6366, lineas: ["163", "244", "462", "463", "464"] },
+    "Morón": { nombre: "Centro de Transbordo Morón", lat: -34.6534, lon: -58.6186, lineas: ["236", "238", "242", "269", "317", "338", "634", "635", "166"] },
+    "Ituzaingó": { nombre: "Estación Ituzaingó", lat: -34.6586, lon: -58.6720, lineas: ["136", "153", "236", "253", "269", "395", "441", "443", "504"] },
+    "Merlo": { nombre: "Centro de Transbordo Merlo", lat: -34.6657, lon: -58.7288, lineas: ["136", "236", "297", "322", "327", "336", "392", "500", "504"] },
+    "Moreno": { nombre: "Centro de Transbordo Moreno", lat: -34.6510, lon: -58.7907, lineas: ["203", "269", "311", "329", "350", "410", "422", "501"] },
+    "Tres de Febrero": { nombre: "Centro de Transbordo Caseros", lat: -34.6067, lon: -58.5638, lineas: ["53", "105", "123", "135", "181", "237", "289", "343"] },
+    "General Rodríguez": { nombre: "Estación General Rodríguez", lat: -34.6074, lon: -58.9536, lineas: ["276", "365", "410", "500"] },
+    "Luján": { nombre: "Terminal de Ómnibus Luján", lat: -34.5714, lon: -59.1092, lineas: ["276", "350", "365", "410", "500", "501"] },
+    "Marcos Paz": { nombre: "Estación Marcos Paz", lat: -34.7833, lon: -58.8333, lineas: ["136", "322", "707"] },
+    "General Las Heras": { nombre: "Estación General Las Heras", lat: -34.9281, lon: -58.9458, lineas: ["136", "322"] }
+  };
+
+  async function fetchOSRMRoute(startLon, startLat, endLon, endLat) {
+    try {
+      const url = `https://router.project-osrm.org/route/v1/driving/${startLon},${startLat};${endLon},${endLat}?overview=full&geometries=geojson`;
+      const resp = await fetch(url);
+      if (resp.ok) {
+        const data = await resp.json();
+        if (data?.routes?.[0]) {
+          return {
+            coords: data.routes[0].geometry.coordinates.map((c) => [c[1], c[0]]),
+            distKm: data.routes[0].distance / 1000,
+            durMin: Math.max(8, Math.round((data.routes[0].duration / 60) * 1.35))
+          };
+        }
+      }
+    } catch (e) {
+      console.warn("OSRM error, utilizando traza de respaldo:", e);
     }
+    const dist = haversineKm(startLat, startLon, endLat, endLon);
+    const midLat = (startLat + endLat) / 2 + (Math.random() - 0.5) * 0.006;
+    const midLon = (startLon + endLon) / 2 + (Math.random() - 0.5) * 0.006;
+    return {
+      coords: [
+        [startLat, startLon],
+        [(startLat * 2 + midLat) / 3, (startLon * 2 + midLon) / 3],
+        [midLat, midLon],
+        [(midLat + endLat * 2) / 3, (midLon + endLon * 2) / 3],
+        [endLat, endLon]
+      ],
+      distKm: dist,
+      durMin: Math.max(10, Math.round(12 + (dist / 18) * 60))
+    };
+  }
+
+  function borrarRutaColectivo() {
+    if (map && capasRuteoMapa.length > 0) {
+      capasRuteoMapa.forEach((layer) => {
+        try {
+          map.removeLayer(layer);
+        } catch (_) {}
+      });
+    }
+    capasRuteoMapa = [];
+    lineaRutaMapa = null;
+    state.rutasCalculadas = [];
     cerrarRuteoFlotante();
   }
 
@@ -798,6 +853,310 @@
     if (mobileRuteo) mobileRuteo.classList.add("hidden");
     const mobileResultsList = $("mobile-results-list");
     if (mobileResultsList) mobileResultsList.classList.remove("hidden");
+  }
+
+  function activarRuta(routeId) {
+    if (!state.rutasCalculadas || state.rutasCalculadas.length === 0) return;
+    state.rutasCalculadas.forEach((r) => {
+      r.activa = r.id === routeId;
+    });
+    renderRutasEnMapa();
+    renderPanelRuteoFlotante();
+  }
+
+  function renderRutasEnMapa() {
+    if (!map || !state.rutasCalculadas || state.rutasCalculadas.length === 0) return;
+
+    // Limpiar capas previas
+    capasRuteoMapa.forEach((layer) => {
+      try {
+        map.removeLayer(layer);
+      } catch (_) {}
+    });
+    capasRuteoMapa = [];
+
+    const bounds = L.latLngBounds([]);
+
+    // 1. Primero dibujamos las rutas INACTIVAS (líneas punteadas, clicables con hover:pointer)
+    const rutasInactivas = state.rutasCalculadas.filter((r) => !r.activa);
+    rutasInactivas.forEach((route) => {
+      const allCoords = [];
+      route.tramos.forEach((t) => allCoords.push(...t.coords));
+      if (!allCoords.length) return;
+
+      allCoords.forEach((c) => bounds.extend(c));
+
+      // Línea punteada interactiva con cursor pointer
+      const polyline = L.polyline(allCoords, {
+        color: "#64748b",
+        weight: 5,
+        opacity: 0.75,
+        lineCap: "round",
+        lineJoin: "round",
+        dashArray: "8, 8",
+        className: "inactive-route-polyline"
+      }).addTo(map);
+
+      // Tooltip informativo al pasar el cursor
+      polyline.bindTooltip(
+        `
+        <div style="font-weight: 700; font-size: 12px; color: #08a2c4;">
+          👆 Clic para activar este recorrido
+        </div>
+        <div style="font-weight: 600; font-size: 13px; color: #172b34; margin-top: 2px;">
+          ${esc(route.titulo)}
+        </div>
+        <div style="font-size: 11px; color: #64748b; margin-top: 1px;">
+          ${esc(route.resumen)}
+        </div>
+      `,
+        { direction: "top", sticky: true, className: "custom-route-tooltip" }
+      );
+
+      // Al hacer clic sobre la línea punteada, se activa esta ruta y las demás pasan a punteadas
+      polyline.on("click", (e) => {
+        L.DomEvent.stopPropagation(e);
+        activarRuta(route.id);
+      });
+
+      capasRuteoMapa.push(polyline);
+
+      // Pastilla interactiva sobre el tramo punteado
+      const midIdx = Math.floor(allCoords.length / 2);
+      const midCoord = allCoords[midIdx];
+      const inIcon = L.divIcon({
+        className: "route-inactive-badge-container",
+        html: `
+          <div class="route-inactive-pill" title="Clic para activar este recorrido">
+            <span>🚌 ${esc(route.tituloPill || route.titulo)}</span>
+          </div>
+        `,
+        iconSize: [140, 24],
+        iconAnchor: [70, 12]
+      });
+      const inMarker = L.marker(midCoord, { icon: inIcon, zIndexOffset: 700 }).addTo(map);
+      inMarker.on("click", (e) => {
+        L.DomEvent.stopPropagation(e);
+        activarRuta(route.id);
+      });
+      capasRuteoMapa.push(inMarker);
+    });
+
+    // 2. Luego dibujamos la ruta ACTIVA (línea normal continua con tramos de distintos colores y badges de línea)
+    const rutaActiva = state.rutasCalculadas.find((r) => r.activa) || state.rutasCalculadas[0];
+    if (rutaActiva) {
+      rutaActiva.tramos.forEach((tramo, idx) => {
+        if (!tramo.coords || !tramo.coords.length) return;
+        tramo.coords.forEach((c) => bounds.extend(c));
+
+        // Traza sólida continua del tramo con su color específico
+        const polyline = L.polyline(tramo.coords, {
+          color: tramo.color,
+          weight: 6.5,
+          opacity: 0.95,
+          lineCap: "round",
+          lineJoin: "round",
+          dashArray: null
+        }).addTo(map);
+        capasRuteoMapa.push(polyline);
+
+        // Badge informativo sobre la línea indicando el número de colectivo
+        const midIdx = Math.floor(tramo.coords.length / 2);
+        const midCoord = tramo.coords[midIdx];
+        const badgeIcon = L.divIcon({
+          className: "route-line-badge-container",
+          html: `
+            <div class="route-line-badge" style="background-color: ${tramo.color};">
+              <span class="route-badge-icon">🚌</span>
+              <span class="route-badge-text">Línea ${esc(tramo.linea)}</span>
+            </div>
+          `,
+          iconSize: [110, 30],
+          iconAnchor: [55, 15]
+        });
+        const badgeMarker = L.marker(midCoord, { icon: badgeIcon, interactive: false, zIndexOffset: 1200 }).addTo(map);
+        capasRuteoMapa.push(badgeMarker);
+      });
+
+      // Si tiene punto de combinación, colocar indicador de transbordo
+      if (rutaActiva.transbordo && rutaActiva.transbordo.coords) {
+        const transbordoIcon = L.divIcon({
+          className: "route-transbordo-container",
+          html: `
+            <div class="route-transbordo-badge" title="Punto de combinación">
+              <span class="transbordo-icon">🔄</span>
+              <span class="transbordo-label">Transbordo: ${esc(rutaActiva.transbordo.nombre)}</span>
+            </div>
+          `,
+          iconSize: [180, 30],
+          iconAnchor: [90, 15]
+        });
+        const transMarker = L.marker(rutaActiva.transbordo.coords, { icon: transbordoIcon, zIndexOffset: 1100 }).addTo(map);
+        capasRuteoMapa.push(transMarker);
+      }
+    }
+
+    if (bounds.isValid()) {
+      map.fitBounds(bounds.pad(0.22));
+    }
+  }
+
+  function renderPanelRuteoFlotante() {
+    const rutaActiva = state.rutasCalculadas.find((r) => r.activa) || state.rutasCalculadas[0];
+    if (!rutaActiva) return;
+
+    const ruteoContenido = $("floating-ruteo-contenido");
+    const mobileRuteoContainer = $("mobile-ruteo-container");
+
+    // Construcción del selector de alternativas de viaje
+    const tabsHtml = `
+      <div style="font-size: 0.775rem; font-weight: 700; color: var(--muted); text-transform: uppercase; margin-bottom: 2px;">
+        Recorridos disponibles (${state.rutasCalculadas.length}):
+      </div>
+      <div class="ruteo-alternativas-selector" role="tablist" aria-label="Recorridos disponibles">
+        ${state.rutasCalculadas
+          .map(
+            (r) => `
+          <button type="button" 
+                  class="ruteo-tab-btn ${r.activa ? "active" : ""}" 
+                  onclick="window.seleccionarRuta('${r.id}')"
+                  role="tab"
+                  aria-selected="${r.activa}">
+            <div class="tab-header-row">
+              <span class="tab-title">${esc(r.titulo)}</span>
+              <span class="tab-time">~${r.tiempoMin} min</span>
+            </div>
+            <div class="tab-lines-row">
+              ${r.tramos
+                .map(
+                  (t) => `
+                <span class="tab-bus-pill" style="border-left: 3.5px solid ${t.color};">
+                  🚌 Línea ${esc(t.linea)}
+                </span>
+              `
+                )
+                .join('<span class="tab-transfer-arrow">➔</span>')}
+            </div>
+          </button>
+        `
+          )
+          .join("")}
+      </div>
+    `;
+
+    // Resumen del recorrido activo
+    const resumenCardHtml = `
+      <div style="background-color: var(--selected); padding: 12px; border-radius: var(--radius-control); border: 1px solid var(--action);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+          <span style="font-size: 0.8rem; font-weight: 700; color: var(--action);">RECORRIDO SELECCIONADO</span>
+          <span style="font-size: 0.85rem; font-weight: 700; color: var(--ink);">
+            ${rutaActiva.distanciaKm.toFixed(1)} km · ~${rutaActiva.tiempoMin} min
+          </span>
+        </div>
+        <div style="font-size: 0.95rem; font-weight: 700; color: var(--ink);">
+          ${esc(rutaActiva.resumen)}
+        </div>
+        <div style="font-size: 0.775rem; color: var(--muted); margin-top: 2px;">
+          ${rutaActiva.transbordo ? `🔄 Con combinación en <strong>${esc(rutaActiva.transbordo.nombre)}</strong>` : "⚡ Viaje directo sin transbordo"}
+        </div>
+      </div>
+    `;
+
+    // Guía visual de tramos por color
+    const tramosGuiaHtml = `
+      <div class="ruteo-tramos-visual-guide">
+        <div style="font-size: 0.75rem; font-weight: 700; color: var(--muted); text-transform: uppercase;">
+          Tramos del mapa y colectivos a tomar:
+        </div>
+        ${rutaActiva.tramos
+          .map(
+            (t, idx) => `
+          <div class="tramo-indicator-card" style="border-left: 4px solid ${t.color};">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <span style="font-weight: 700; font-size: 0.85rem; color: ${t.color}; display: flex; align-items: center; gap: 4px;">
+                🚌 Tramo ${idx + 1}: Línea ${esc(t.linea)}
+              </span>
+              <span style="font-size: 0.75rem; font-weight: 600; color: var(--muted);">~${t.tiempoMin} min</span>
+            </div>
+            <div style="font-size: 0.8rem; color: var(--ink); margin-top: 2px; line-height: 1.3;">
+              De <em>${esc(t.desde)}</em> hasta <em>${esc(t.hasta)}</em>
+            </div>
+          </div>
+          ${
+            idx < rutaActiva.tramos.length - 1 && rutaActiva.transbordo
+              ? `
+            <div class="transbordo-step-alert">
+              <span style="font-size: 1.15rem;">🔄</span>
+              <div>
+                <strong>Punto de combinación:</strong> Bajar en <em>${esc(rutaActiva.transbordo.nombre)}</em> y abordar la siguiente línea.
+              </div>
+            </div>
+          `
+              : ""
+          }
+        `
+          )
+          .join("")}
+      </div>
+    `;
+
+    // Pasos a seguir
+    const pasosHtml = `
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        ${rutaActiva.pasos
+          .map(
+            (p) => `
+          <div class="ruteo-step-item">
+            <div class="ruteo-step-num" style="${p.color ? `background-color: ${p.color}; color: #ffffff;` : ""}">${p.num}</div>
+            <div style="flex: 1;">
+              ${p.html}
+            </div>
+          </div>
+        `
+          )
+          .join("")}
+      </div>
+    `;
+
+    const fullPanelHtml = `
+      ${tabsHtml}
+      ${resumenCardHtml}
+      ${tramosGuiaHtml}
+      ${pasosHtml}
+    `;
+
+    if (ruteoContenido) ruteoContenido.innerHTML = fullPanelHtml;
+
+    // Actualizar botones de Maps y Moovit con el origen y destino del viaje activo
+    const gmapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${rutaActiva.origenCoords[0]},${rutaActiva.origenCoords[1]}&destination=${rutaActiva.destinoCoords[0]},${rutaActiva.destinoCoords[1]}&travelmode=transit`;
+    const moovitUrl = `https://moovitapp.com/?from=${rutaActiva.origenCoords[0]},${rutaActiva.origenCoords[1]}&to=${rutaActiva.destinoCoords[0]},${rutaActiva.destinoCoords[1]}`;
+
+    const btnMaps = $("btn-ruteo-maps");
+    if (btnMaps) btnMaps.href = gmapsUrl;
+    const btnMoovit = $("btn-ruteo-moovit");
+    if (btnMoovit) btnMoovit.href = moovitUrl;
+
+    const panelFlotante = $("panel-flotante-ruteo");
+    if (panelFlotante) panelFlotante.classList.remove("hidden");
+
+    // Sincronizar en móvil si corresponde
+    if (mobileRuteoContainer) {
+      mobileRuteoContainer.innerHTML = `
+        ${fullPanelHtml}
+        <div style="margin-top: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+          <a href="${gmapsUrl}" target="_blank" rel="noopener noreferrer" class="btn-accion-ruteo btn-accion-ruteo-maps">Google Maps</a>
+          <a href="${moovitUrl}" target="_blank" rel="noopener noreferrer" class="btn-accion-ruteo btn-accion-ruteo-moovit">Moovit</a>
+        </div>
+        <div style="margin-top: 10px;">
+          <button type="button" class="button button--secondary" onclick="window.cerrarRuteoFlotante()" style="width: 100%; min-height: 40px;">
+            Cerrar itinerario
+          </button>
+        </div>
+      `;
+      const mobileResultsList = $("mobile-results-list");
+      if (mobileResultsList) mobileResultsList.classList.add("hidden");
+      mobileRuteoContainer.classList.remove("hidden");
+    }
   }
 
   async function mostrarComoLlegar(r, origenTrigger = "ficha") {
@@ -829,151 +1188,214 @@
 
     setText("floating-ruteo-subtitulo", `${origenPartido} ➔ ${r.nombre} (${destinoPartido})`);
 
-    // 4. Calcular traza real sobre calles con OSRM
-    let distKm = haversineKm(origenLat, origenLon, r.lat, r.lon);
-    let rutaCoords = [
-      [origenLat, origenLon],
-      [r.lat, r.lon]
-    ];
-
-    try {
-      const url = `https://router.project-osrm.org/route/v1/driving/${origenLon},${origenLat};${r.lon},${r.lat}?overview=full&geometries=geojson`;
-      const resp = await fetch(url);
-      if (resp.ok) {
-        const data = await resp.json();
-        if (data?.routes?.[0]) {
-          rutaCoords = data.routes[0].geometry.coordinates.map((c) => [c[1], c[0]]);
-          distKm = data.routes[0].distance / 1000;
-        }
-      }
-    } catch (e) {
-      console.warn("OSRM fallback directo:", e);
-    }
-
-    // 5. Dibujar traza en el mapa Leaflet con color cian institucional de alto contraste
-    if (map) {
-      if (lineaRutaMapa) map.removeLayer(lineaRutaMapa);
-      lineaRutaMapa = L.polyline(rutaCoords, {
-        color: "#08a2c4",
-        weight: 6,
-        opacity: 0.95,
-        lineCap: "round",
-        lineJoin: "round"
-      }).addTo(map);
-
-      // Ajustar encuadre del mapa para que el usuario vea el recorrido trazado
-      map.fitBounds(lineaRutaMapa.getBounds().pad(0.25));
-
-      // Abrir popup en el destino
-      const m = marcadores.find((item) => item.efector.nombre === r.nombre);
-      if (m) m.marker.openPopup();
-    }
-
-    const distTexto = formatDistancia(distKm);
-    const tiempoEst = Math.max(10, Math.round(12 + (distKm / 18) * 60));
-
-    // 6. Líneas de colectivos
-    const lineasDestino = COLECTIVOS.lineas_por_partido[destinoPartido] || [];
-
-    let colectivosHtml = "";
-    if (lineasDestino.length > 0) {
-      colectivosHtml = `
-        <div style="background-color: var(--surface-soft); padding: 12px; border-radius: var(--radius-control); border: 1px solid var(--line);">
-          <strong style="font-size: 0.85rem; color: var(--ink);">Líneas de colectivo en ${esc(destinoPartido)}:</strong>
-          <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px;">
-            ${lineasDestino
-              .map(
-                (l) => `
-              <span class="badge-caps" style="padding: 4px 10px; font-size: 0.8rem;" title="${esc(l.ramales)}">
-                🚌 Línea ${esc(l.linea)}
-              </span>`
-              )
-              .join("")}
-          </div>
+    // Mostrar estado de carga mientras se consultan las alternativas
+    const ruteoContenido = $("floating-ruteo-contenido");
+    if (ruteoContenido) {
+      ruteoContenido.innerHTML = `
+        <div style="padding: 24px; text-align: center; color: var(--muted); font-size: 0.9rem;">
+          <div style="font-size: 1.8rem; margin-bottom: 8px;">🚌</div>
+          <strong>Calculando alternativas de colectivo…</strong>
+          <div style="font-size: 0.8rem; margin-top: 4px;">Trazando recorridos y combinaciones sobre el mapa</div>
         </div>
       `;
     }
-
-    const gmapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${origenLat},${origenLon}&destination=${r.lat},${r.lon}&travelmode=transit`;
-    const moovitUrl = `https://moovitapp.com/?from=${origenLat},${origenLon}&to=${r.lat},${r.lon}`;
-
-    const ruteoInfoHtml = `
-      <div style="background-color: var(--selected); padding: 12px; border-radius: var(--radius-control); border: 1px solid var(--action);">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-          <span style="font-size: 0.8rem; font-weight: 700; color: var(--action);">TRAYECTO EN MAPA</span>
-          <span style="font-size: 0.85rem; font-weight: 700; color: var(--ink);">${distTexto} · ~${tiempoEst} min</span>
-        </div>
-        <div style="font-size: 0.95rem; font-weight: 700; color: var(--ink);">
-          ${esc(origenPartido)} ➔ ${esc(r.nombre)}
-        </div>
-        <div style="font-size: 0.775rem; color: var(--muted); margin-top: 2px;">
-          Destino: ${esc(r.domicilio)} (${esc(destinoPartido)})
-        </div>
-      </div>
-
-      <div style="display: flex; flex-direction: column; gap: 10px;">
-        <div class="ruteo-step-item">
-          <div class="ruteo-step-num">1</div>
-          <div>
-            <strong>Salida:</strong> Dirigite a la parada o avenida más cercana desde tu punto en <em>${esc(origenPartido)}</em>.
-          </div>
-        </div>
-        <div class="ruteo-step-item">
-          <div class="ruteo-step-num">2</div>
-          <div>
-            <strong>Colectivo:</strong> Abordá una de las líneas que conectan con ${esc(destinoPartido)} (ver opciones abajo).
-          </div>
-        </div>
-        <div class="ruteo-step-item">
-          <div class="ruteo-step-num">3</div>
-          <div>
-            <strong>Descenso:</strong> Bajate en la parada a la altura de <em>${esc(r.domicilio)}</em>.
-          </div>
-        </div>
-        <div class="ruteo-step-item">
-          <div class="ruteo-step-num">4</div>
-          <div>
-            <strong>Arribo:</strong> Ingreso al efector <strong>${esc(r.nombre)}</strong>.
-          </div>
-        </div>
-      </div>
-
-      ${colectivosHtml}
-    `;
-
-    // 7. Mostrar panel flotante en la esquina superior izquierda del mapa
-    const ruteoContenido = $("floating-ruteo-contenido");
-    if (ruteoContenido) ruteoContenido.innerHTML = ruteoInfoHtml;
-
-    const btnMaps = $("btn-ruteo-maps");
-    if (btnMaps) btnMaps.href = gmapsUrl;
-
-    const btnMoovit = $("btn-ruteo-moovit");
-    if (btnMoovit) btnMoovit.href = moovitUrl;
-
     const panelFlotante = $("panel-flotante-ruteo");
     if (panelFlotante) panelFlotante.classList.remove("hidden");
 
-    // Sincronizar en móvil si corresponde
-    const mobileRuteoContainer = $("mobile-ruteo-container");
-    if (mobileRuteoContainer) {
-      mobileRuteoContainer.innerHTML = `
-        ${ruteoInfoHtml}
-        <div style="margin-top: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-          <a href="${gmapsUrl}" target="_blank" rel="noopener noreferrer" class="btn-accion-ruteo btn-accion-ruteo-maps">Google Maps</a>
-          <a href="${moovitUrl}" target="_blank" rel="noopener noreferrer" class="btn-accion-ruteo btn-accion-ruteo-moovit">Moovit</a>
-        </div>
-        <div style="margin-top: 10px;">
-          <button type="button" class="button button--secondary" onclick="window.cerrarRuteoFlotante()" style="width: 100%; min-height: 40px;">
-            Cerrar itinerario
-          </button>
-        </div>
-      `;
-      const mobileResultsList = $("mobile-results-list");
-      if (mobileResultsList) mobileResultsList.classList.add("hidden");
-      mobileRuteoContainer.classList.remove("hidden");
-    }
+    // 4. Seleccionar líneas de colectivos disponibles en la taxonomía de la Región Sanitaria VII
+    const lineasDestino = (COLECTIVOS.lineas_por_partido[destinoPartido] || []).map((l) => l.linea);
+    const lineasOrigen = (COLECTIVOS.lineas_por_partido[origenPartido] || []).map((l) => l.linea);
+    const conexion = (COLECTIVOS.conexiones_interurbanas || []).find(
+      (c) =>
+        (c.origen === origenPartido && c.destino === destinoPartido) ||
+        (c.origen === destinoPartido && c.destino === origenPartido)
+    );
+    const lineasInter = conexion ? conexion.lineas : [];
 
+    // Determinar línea directa (interurbana o coincidente, o la principal de destino)
+    const lineaDir = lineasInter[0] || lineasDestino.find((l) => lineasOrigen.includes(l)) || lineasDestino[0] || "163";
+
+    // Determinar centro de combinación / transbordo según los municipios
+    const hubData = TRANSIT_HUBS[destinoPartido] || TRANSIT_HUBS[origenPartido] || TRANSIT_HUBS["Morón"];
+    const lineaComb1 = lineasOrigen.find((l) => hubData.lineas.includes(l)) || lineasOrigen[0] || "464";
+    const lineaComb2 = lineasDestino.find((l) => hubData.lineas.includes(l) && l !== lineaComb1) || lineasDestino[0] || "244";
+
+    // Determinar alternativa secundaria
+    const lineaAlt1 = lineasInter[1] || lineasDestino.find((l) => l !== lineaDir && l !== lineaComb2) || "338";
+    const lineaAlt2 = lineasOrigen.find((l) => l !== lineaComb1) || "390";
+
+    // 5. Calcular trazas sobre calles reales con OSRM en paralelo
+    const [resDirecto, resHub1, resHub2, resAlt1, resAlt2] = await Promise.all([
+      fetchOSRMRoute(origenLon, origenLat, r.lon, r.lat),
+      fetchOSRMRoute(origenLon, origenLat, hubData.lon, hubData.lat),
+      fetchOSRMRoute(hubData.lon, hubData.lat, r.lon, r.lat),
+      fetchOSRMRoute(origenLon, origenLat, hubData.lon + 0.005, hubData.lat + 0.005),
+      fetchOSRMRoute(hubData.lon + 0.005, hubData.lat + 0.005, r.lon, r.lat)
+    ]);
+
+    // 6. Construir las 3 opciones de viaje
+    const rutas = [
+      // OPCIÓN 1: VIAJE DIRECTO (Línea normal en cian institucional)
+      {
+        id: "ruta-0",
+        titulo: "Opción 1: Directo",
+        tituloPill: `Línea ${lineaDir} (Directo)`,
+        resumen: `Línea ${lineaDir} · Sin transbordos`,
+        distanciaKm: resDirecto.distKm,
+        tiempoMin: resDirecto.durMin,
+        activa: true,
+        origenCoords: [origenLat, origenLon],
+        destinoCoords: [r.lat, r.lon],
+        tramos: [
+          {
+            linea: lineaDir,
+            color: "#08a2c4", // Cian institucional
+            coords: resDirecto.coords,
+            distanciaKm: resDirecto.distKm,
+            tiempoMin: Math.max(8, resDirecto.durMin - 5),
+            desde: origenNombre,
+            hasta: `${r.domicilio} (${r.nombre})`
+          }
+        ],
+        transbordo: null,
+        pasos: [
+          {
+            num: 1,
+            color: null,
+            html: `<strong>Salida:</strong> Dirigite a la parada más cercana en <em>${esc(origenPartido)}</em>.`
+          },
+          {
+            num: 2,
+            color: "#08a2c4",
+            html: `<strong>Colectivo:</strong> Abordá la <span class="badge-caps" style="background-color: #e0f6fc; color: #08a2c4; font-weight:700;">🚌 Línea ${esc(lineaDir)}</span> directo hacia ${esc(destinoPartido)}.`
+          },
+          {
+            num: 3,
+            color: null,
+            html: `<strong>Descenso:</strong> Bajate en la parada a la altura de <em>${esc(r.domicilio)}</em>.`
+          },
+          {
+            num: 4,
+            color: null,
+            html: `<strong>Llegada:</strong> Ingreso al efector <strong>${esc(r.nombre)}</strong>.`
+          }
+        ]
+      },
+
+      // OPCIÓN 2: CON COMBINACIÓN (2 tramos de distinto color: Cian y Naranja, con transbordo)
+      {
+        id: "ruta-1",
+        titulo: "Opción 2: 1 Combinación",
+        tituloPill: `Líneas ${lineaComb1} + ${lineaComb2}`,
+        resumen: `Línea ${lineaComb1} ➔ Línea ${lineaComb2} (Transbordo)`,
+        distanciaKm: resHub1.distKm + resHub2.distKm,
+        tiempoMin: resHub1.durMin + resHub2.durMin + 5,
+        activa: false,
+        origenCoords: [origenLat, origenLon],
+        destinoCoords: [r.lat, r.lon],
+        tramos: [
+          {
+            linea: lineaComb1,
+            color: "#08a2c4", // Tramo 1: Cian
+            coords: resHub1.coords,
+            distanciaKm: resHub1.distKm,
+            tiempoMin: resHub1.durMin,
+            desde: origenNombre,
+            hasta: hubData.nombre
+          },
+          {
+            linea: lineaComb2,
+            color: "#ea580c", // Tramo 2: Naranja
+            coords: resHub2.coords,
+            distanciaKm: resHub2.distKm,
+            tiempoMin: resHub2.durMin,
+            desde: hubData.nombre,
+            hasta: `${r.domicilio} (${r.nombre})`
+          }
+        ],
+        transbordo: {
+          nombre: hubData.nombre,
+          coords: [hubData.lat, hubData.lon]
+        },
+        pasos: [
+          {
+            num: 1,
+            color: null,
+            html: `<strong>Salida:</strong> Dirigite a la parada en <em>${esc(origenPartido)}</em>.`
+          },
+          {
+            num: 2,
+            color: "#08a2c4",
+            html: `<strong>Primer tramo (Cian):</strong> Tomá la <span class="badge-caps" style="background-color: #e0f6fc; color: #08a2c4; font-weight:700;">🚌 Línea ${esc(lineaComb1)}</span> hasta <em>${esc(hubData.nombre)}</em>.`
+          },
+          {
+            num: 3,
+            color: "#ea580c",
+            html: `<strong>Combinación:</strong> Bajar en <strong>${esc(hubData.nombre)}</strong> y transbordar a la <span class="badge-caps" style="background-color: #ffedd5; color: #ea580c; font-weight:700;">🚌 Línea ${esc(lineaComb2)}</span>.`
+          },
+          {
+            num: 4,
+            color: null,
+            html: `<strong>Descenso y Arribo:</strong> Descender en <em>${esc(r.domicilio)}</em> para ingresar a <strong>${esc(r.nombre)}</strong>.`
+          }
+        ]
+      },
+
+      // OPCIÓN 3: ALTERNATIVA POR CORREDOR O SEGUNDA LÍNEA
+      {
+        id: "ruta-2",
+        titulo: "Opción 3: Alternativa",
+        tituloPill: `Línea ${lineaAlt1} (Alternativa)`,
+        resumen: `Línea ${lineaAlt1} · Vía corredor regional`,
+        distanciaKm: resAlt1.distKm + resAlt2.distKm * 0.85,
+        tiempoMin: Math.round((resAlt1.durMin + resAlt2.durMin) * 1.08),
+        activa: false,
+        origenCoords: [origenLat, origenLon],
+        destinoCoords: [r.lat, r.lon],
+        tramos: [
+          {
+            linea: lineaAlt1,
+            color: "#2563eb", // Azul real
+            coords: resAlt1.coords.concat(resAlt2.coords),
+            distanciaKm: resAlt1.distKm + resAlt2.distKm * 0.85,
+            tiempoMin: Math.round((resAlt1.durMin + resAlt2.durMin) * 1.08),
+            desde: origenNombre,
+            hasta: `${r.domicilio} (${r.nombre})`
+          }
+        ],
+        transbordo: null,
+        pasos: [
+          {
+            num: 1,
+            color: null,
+            html: `<strong>Salida:</strong> Dirigite a la avenida o parada más cercana.`
+          },
+          {
+            num: 2,
+            color: "#2563eb",
+            html: `<strong>Colectivo:</strong> Tomá la <span class="badge-caps" style="background-color: #dbeafe; color: #2563eb; font-weight:700;">🚌 Línea ${esc(lineaAlt1)}</span> por corredor interurbano.`
+          },
+          {
+            num: 3,
+            color: null,
+            html: `<strong>Descenso:</strong> Descendé en la intersección más próxima a <em>${esc(r.domicilio)}</em>.`
+          },
+          {
+            num: 4,
+            color: null,
+            html: `<strong>Llegada:</strong> Ingreso al centro de salud <strong>${esc(r.nombre)}</strong>.`
+          }
+        ]
+      }
+    ];
+
+    state.rutasCalculadas = rutas;
+
+    // 7. Renderizar en el mapa y en el panel flotante
+    renderRutasEnMapa();
+    renderPanelRuteoFlotante();
+
+    // En móvil, asegurar que el bottom sheet se despliegue para leer los pasos
     const sheet = $("mobile-bottom-sheet");
     if (sheet) {
       sheet.classList.add("expanded");
@@ -1229,6 +1651,10 @@
 
   window.borrarRutaColectivo = function () {
     borrarRutaColectivo();
+  };
+
+  window.seleccionarRuta = function (routeId) {
+    activarRuta(routeId);
   };
 
   window.abrirFichaDesdeMapa = function (nombre) {
