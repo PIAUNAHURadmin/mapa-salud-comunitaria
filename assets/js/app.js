@@ -190,7 +190,7 @@
         ${distText}
         <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 6px;">
           <button type="button" class="button button--primary" onclick="window.ruteoDesdeMapa('${esc(r.nombre)}')" style="min-height: 36px; padding: 6px 12px; font-size: 12px; width: 100%;">
-            🚌 Cómo llegar en colectivo
+            🧭 Cómo llegar
           </button>
           <button type="button" class="button button--secondary" onclick="window.abrirFichaDesdeMapa('${esc(r.nombre)}')" style="min-height: 32px; padding: 4px 12px; font-size: 12px; width: 100%;">
             Ver ficha completa
@@ -806,7 +806,7 @@
     state.origenRuteo = origenTrigger;
     state.efectorSeleccionado = r;
 
-    // 1. Pasar inmediatamente a la vista de Mapa para que el usuario VEA el mapa con el trayecto
+    // 1. Pasar a la vista de Mapa para encuadrar la ubicación y el efector
     activarVista("mapa");
 
     // 2. Asegurar que el sidebar izquierdo mantenga el listado visible
@@ -823,163 +823,65 @@
       const muniDef = MUNICIPIOS.find((m) => m.nombre === "Hurlingham") || MUNICIPIOS[0];
       origenLat = muniDef ? muniDef.lat : -34.59;
       origenLon = muniDef ? muniDef.lon : -58.63;
-      origenNombre = "Hurlingham (Origen sugerido)";
+      origenNombre = "Hurlingham (Ubicación de referencia)";
     }
 
-    const origenPartido = obtenerMunicipioCercano(origenLat, origenLon);
     const destinoPartido = r.partido;
-    const esMismoPartido = origenPartido === destinoPartido;
+    const distKm = haversineKm(origenLat, origenLon, r.lat, r.lon);
+    const distTexto = formatDistancia(distKm);
 
-    setText("floating-ruteo-subtitulo", `${origenPartido} ➔ ${r.nombre} (${destinoPartido})`);
-
-    // 4. Calcular traza real sobre calles con OSRM
-    let distKm = haversineKm(origenLat, origenLon, r.lat, r.lon);
-    let rutaCoords = [
-      [origenLat, origenLon],
-      [r.lat, r.lon]
-    ];
-
-    try {
-      const url = `https://router.project-osrm.org/route/v1/driving/${origenLon},${origenLat};${r.lon},${r.lat}?overview=full&geometries=geojson`;
-      const resp = await fetch(url);
-      if (resp.ok) {
-        const data = await resp.json();
-        if (data?.routes?.[0]) {
-          rutaCoords = data.routes[0].geometry.coordinates.map((c) => [c[1], c[0]]);
-          distKm = data.routes[0].distance / 1000;
-        }
-      }
-    } catch (e) {
-      console.warn("OSRM fallback directo:", e);
+    // 4. Limpiar cualquier traza previa en el mapa (no dibujamos rutas viales inventadas para colectivos)
+    if (lineaRutaMapa && map) {
+      map.removeLayer(lineaRutaMapa);
+      lineaRutaMapa = null;
     }
 
-    // 5. Dibujar traza en el mapa Leaflet con color cian institucional de alto contraste
+    // 5. Encuadrar el mapa para mostrar tu punto de partida y el efector de salud
     if (map) {
-      if (lineaRutaMapa) map.removeLayer(lineaRutaMapa);
-      lineaRutaMapa = L.polyline(rutaCoords, {
-        color: "#08a2c4",
-        weight: 6,
-        opacity: 0.95,
-        lineCap: "round",
-        lineJoin: "round"
-      }).addTo(map);
-
-      // Ajustar encuadre del mapa para que el usuario vea el recorrido trazado
-      map.fitBounds(lineaRutaMapa.getBounds().pad(0.25));
+      if (state.ubicacion) {
+        const bounds = L.latLngBounds([
+          [origenLat, origenLon],
+          [r.lat, r.lon]
+        ]);
+        map.fitBounds(bounds, { padding: [70, 70], maxZoom: 15 });
+      } else {
+        map.setView([r.lat, r.lon], 15);
+      }
 
       // Abrir popup en el destino
       const m = marcadores.find((item) => item.efector.nombre === r.nombre);
       if (m) m.marker.openPopup();
     }
 
-    const distTexto = formatDistancia(distKm);
-    const tiempoEst = Math.max(10, Math.round(12 + (distKm / 18) * 60));
+    setText("floating-ruteo-subtitulo", `${r.nombre} (${destinoPartido})`);
 
-    // 6. Consultar líneas de colectivos verificadas para el municipio de destino
-    const lineasDestino = COLECTIVOS.lineas_por_partido[destinoPartido] || [];
-    const interurbanas = (COLECTIVOS.conexiones_interurbanas || []).filter(
-      (c) => (c.origen === origenPartido && c.destino === destinoPartido) || (c.origen === destinoPartido && c.destino === origenPartido)
-    );
-
-    let infoConexionHtml = "";
-    if (!esMismoPartido && interurbanas.length > 0) {
-      const lineasInterurbanas = interurbanas.flatMap((c) => c.lineas);
-      infoConexionHtml = `
-        <div style="background-color: #fff7ed; padding: 12px; border-radius: var(--radius-control); border: 1px solid #fed7aa; margin-bottom: 8px;">
-          <strong style="font-size: 0.85rem; color: #c2410c; display: flex; align-items: center; gap: 6px;">
-            <span>🔄</span> Conexión interurbana (${esc(origenPartido)} ➔ ${esc(destinoPartido)}):
-          </strong>
-          <div style="font-size: 0.8rem; color: var(--ink); margin-top: 4px; line-height: 1.35;">
-            Líneas que cruzan directamente entre ambos municipios:
-          </div>
-          <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px;">
-            ${lineasInterurbanas
-              .map(
-                (l) => `
-              <span class="badge-caps" style="background-color: #ffedd5; color: #ea580c; border: 1px solid #fed7aa; padding: 3px 8px; font-weight: 700;">
-                🚌 Línea ${esc(l)}
-              </span>`
-              )
-              .join("")}
-          </div>
-        </div>
-      `;
-    }
-
-    let colectivosLocalesHtml = "";
-    if (lineasDestino.length > 0) {
-      colectivosLocalesHtml = `
-        <div style="background-color: var(--surface-soft); padding: 12px; border-radius: var(--radius-control); border: 1px solid var(--line);">
-          <strong style="font-size: 0.85rem; color: var(--ink); display: flex; align-items: center; gap: 6px;">
-            <span>📍</span> Líneas de colectivo en ${esc(destinoPartido)}:
-          </strong>
-          <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px;">
-            ${lineasDestino
-              .map(
-                (l) => `
-              <span class="badge-caps" style="padding: 4px 10px; font-size: 0.8rem;" title="${esc(l.ramales)} (${esc(l.tipo)})">
-                🚌 Línea ${esc(l.linea)}
-              </span>`
-              )
-              .join("")}
-          </div>
-          <div style="font-size: 0.75rem; color: var(--muted); margin-top: 6px;">
-            Pasá el cursor sobre cada línea para ver sus ramales y cabeceras oficiales.
-          </div>
-        </div>
-      `;
-    }
-
+    // 6. Deep links oficiales de transporte público con coordenadas exactas
     const gmapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${origenLat},${origenLon}&destination=${r.lat},${r.lon}&travelmode=transit`;
     const moovitUrl = `https://moovitapp.com/?from=${origenLat},${origenLon}&to=${r.lat},${r.lon}`;
 
     const ruteoInfoHtml = `
       <div style="background-color: var(--selected); padding: 12px; border-radius: var(--radius-control); border: 1px solid var(--action);">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-          <span style="font-size: 0.8rem; font-weight: 700; color: var(--action);">TRAYECTO EN MAPA</span>
-          <span style="font-size: 0.85rem; font-weight: 700; color: var(--ink);">${distTexto} · ~${tiempoEst} min</span>
+          <span style="font-size: 0.775rem; font-weight: 700; color: var(--action); text-transform: uppercase;">Destino</span>
+          <span style="font-size: 0.85rem; font-weight: 700; color: var(--ink);">~${distTexto}</span>
         </div>
-        <div style="font-size: 0.95rem; font-weight: 700; color: var(--ink);">
-          ${esc(origenPartido)} ➔ ${esc(r.nombre)}
+        <div style="font-size: 0.95rem; font-weight: 700; color: var(--ink); line-height: 1.25;">
+          ${esc(r.nombre)}
         </div>
-        <div style="font-size: 0.775rem; color: var(--muted); margin-top: 2px;">
-          Destino: ${esc(r.domicilio)} (${esc(destinoPartido)})
-        </div>
-      </div>
-
-      <div style="display: flex; flex-direction: column; gap: 10px;">
-        <div class="ruteo-step-item">
-          <div class="ruteo-step-num">1</div>
-          <div>
-            <strong>Salida:</strong> Dirigite a la parada o avenida más cercana desde tu punto de partida en <em>${esc(origenPartido)}</em>.
-          </div>
-        </div>
-        <div class="ruteo-step-item">
-          <div class="ruteo-step-num">2</div>
-          <div>
-            <strong>Colectivo:</strong> Abordá una de las líneas que conectan con ${esc(destinoPartido)}.
-          </div>
-        </div>
-        <div class="ruteo-step-item">
-          <div class="ruteo-step-num">3</div>
-          <div>
-            <strong>Descenso:</strong> Bajate en la parada a la altura de <em>${esc(r.domicilio)}</em>.
-          </div>
-        </div>
-        <div class="ruteo-step-item">
-          <div class="ruteo-step-num">4</div>
-          <div>
-            <strong>Arribo:</strong> Ingreso al efector <strong>${esc(r.nombre)}</strong>.
-          </div>
+        <div style="font-size: 0.8rem; color: var(--muted); margin-top: 3px;">
+          📍 ${esc(r.domicilio)} (${esc(destinoPartido)})
         </div>
       </div>
 
-      ${infoConexionHtml}
-      ${colectivosLocalesHtml}
+      <div style="background-color: var(--surface-soft); padding: 12px; border-radius: var(--radius-control); border: 1px solid var(--line); font-size: 0.825rem; color: var(--ink); line-height: 1.45;">
+        <strong style="display: flex; align-items: center; gap: 6px; color: var(--ink); margin-bottom: 6px;">
+          <span>🚌</span> Colectivos y paradas en tiempo real:
+        </strong>
+        Para asegurar que veas <strong>únicamente las líneas de colectivo que realmente pasan por tu zona y llegan a este centro de salud</strong> (con paradas exactas, ramales específicos y horarios SUBE/CNRT en vivo), abrí el recorrido en las plataformas oficiales de transporte:
+      </div>
 
-      <div style="background-color: var(--surface-soft); padding: 10px 12px; border-radius: var(--radius-control); border: 1px solid var(--line); font-size: 0.8rem; color: var(--ink); line-height: 1.4;">
-        <strong style="display: block; margin-bottom: 2px;">⚡ Recorrido exacto en tiempo real:</strong>
-        Para ver la parada exacta según tu esquina, horarios en vivo y ramales específicos, abrí el viaje en <strong>Google Maps</strong> o <strong>Moovit</strong> con los botones de abajo.
+      <div style="font-size: 0.75rem; color: var(--muted); line-height: 1.35; padding: 0 2px;">
+        <em>Origen: ${esc(origenNombre)}</em>
       </div>
     `;
 
@@ -988,10 +890,16 @@
     if (ruteoContenido) ruteoContenido.innerHTML = ruteoInfoHtml;
 
     const btnMaps = $("btn-ruteo-maps");
-    if (btnMaps) btnMaps.href = gmapsUrl;
+    if (btnMaps) {
+      btnMaps.href = gmapsUrl;
+      btnMaps.textContent = "Google Maps (Colectivo)";
+    }
 
     const btnMoovit = $("btn-ruteo-moovit");
-    if (btnMoovit) btnMoovit.href = moovitUrl;
+    if (btnMoovit) {
+      btnMoovit.href = moovitUrl;
+      btnMoovit.textContent = "Moovit";
+    }
 
     const panelFlotante = $("panel-flotante-ruteo");
     if (panelFlotante) panelFlotante.classList.remove("hidden");
@@ -1007,7 +915,7 @@
         </div>
         <div style="margin-top: 10px;">
           <button type="button" class="button button--secondary" onclick="window.cerrarRuteoFlotante()" style="width: 100%; min-height: 40px;">
-            Cerrar itinerario
+            Cerrar
           </button>
         </div>
       `;
