@@ -15,7 +15,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
     <!-- Estilos de diseño según Manual UX/UI UNAHUR (docs/UXUI.pdf) -->
-    <link rel="stylesheet" href="./assets/css/styles.css?v=20261014-6" />
+    <link rel="stylesheet" href="./assets/css/styles.css?v=20261014-7" />
   </head>
   <body>
     <!-- ============================ CABECERA INSTITUCIONAL ============================ -->
@@ -567,31 +567,33 @@
 
     <!-- ============================ MODAL CÓMO LLEGAR EN COLECTIVO ============================ -->
     <div class="modal-backdrop-custom" id="modal-como-llegar-container" role="dialog" aria-modal="true" aria-labelledby="modal-ruteo-titulo">
-      <div class="modal-dialog-box">
+      <div class="modal-dialog-box modal-ruteo-dialog">
         <div class="modal-header">
           <div class="modal-header-title" id="modal-ruteo-titulo">
-            <span style="font-size: 1.4rem;">🧭</span>
-            <span>Cómo llegar al efector</span>
+            <span class="modal-header-icon-badge" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
+            </span>
+            <div style="display: flex; flex-direction: column;">
+              <span style="font-size: 1.15rem; font-weight: 700; color: var(--ink); line-height: 1.2;">Cómo llegar al efector</span>
+              <span style="font-size: 0.8rem; font-weight: 500; color: var(--muted); margin-top: 2px;">Trayecto y transporte en tiempo real</span>
+            </div>
           </div>
-          <button type="button" class="icon-button" id="btn-cerrar-modal-ruteo" aria-label="Cerrar ventana emergente">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" x2="6" y1="6" y2="18"/><line x1="6" x2="18" y1="6" y2="18"/></svg>
+          <button type="button" class="btn-floating-close-x" id="btn-cerrar-modal-ruteo" aria-label="Cerrar ventana" title="Cerrar ventana">
+            ✕
           </button>
         </div>
 
-        <div class="modal-body" id="modal-ruteo-cuerpo" style="padding: 16px; display: flex; flex-direction: column; gap: 12px; overflow-y: auto;">
-          <!-- Contenido dinámico con ambos puntos marcados -->
+        <div class="modal-body" id="modal-ruteo-cuerpo" style="padding: 20px 24px; display: flex; flex-direction: column; gap: 14px; overflow-y: auto;">
+          <!-- Contenido dinámico con ambos puntos marcados y botones oficiales -->
         </div>
 
-        <div class="modal-footer" style="padding: 12px 16px; border-top: 1px solid var(--line); display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap;">
-          <a id="btn-gmaps-link" href="#" target="_blank" rel="noopener noreferrer" class="btn-directo-viaje btn-directo-maps" style="padding: 8px 16px; font-size: 0.85rem;">
-            Google Maps
-          </a>
-          <a id="btn-moovit-link" href="#" target="_blank" rel="noopener noreferrer" class="btn-directo-viaje btn-directo-moovit" style="padding: 8px 16px; font-size: 0.85rem;">
-            Moovit
-          </a>
-          <button type="button" class="button button--secondary" id="btn-cerrar-modal-accion" style="padding: 8px 16px; font-size: 0.85rem;">
+        <div class="modal-footer" style="padding: 14px 24px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; background-color: var(--surface-soft);">
+          <button type="button" class="button button--secondary" id="btn-cerrar-modal-accion" style="min-height: 38px; padding: 0 18px; font-size: 0.875rem;">
             Ver en el mapa
           </button>
+          <span style="font-size: 0.775rem; color: var(--muted);">
+            Se abre en una pestaña nueva
+          </span>
         </div>
       </div>
     </div>
@@ -628,6 +630,6 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <!-- Lógica de aplicación adaptada al Manual UX/UI con control de versión anti-caché -->
-    <script src="./assets/js/app.js?v=20261014-6"></script>
+    <script src="./assets/js/app.js?v=20261014-7"></script>
   </body>
 </html>

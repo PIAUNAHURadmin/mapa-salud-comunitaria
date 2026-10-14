@@ -906,21 +906,68 @@
         </div>
       </div>
 
-      <div style="background-color: var(--surface-soft); padding: 12px; border-radius: var(--radius-control); border: 1px solid var(--line); font-size: 0.825rem; color: var(--ink); line-height: 1.45;">
-        <strong style="display: flex; align-items: center; gap: 6px; color: var(--ink); margin-bottom: 4px;">
-          <span>🚌</span> Ver forma real de llegar en transporte público:
-        </strong>
-        Para ver el trayecto real con las <strong>líneas de colectivo que realmente pasan por esa zona, paradas exactas y horarios en tiempo real</strong>, hacé clic en los enlaces con ambos puntos ya marcados:
+      <div class="ruteo-info-alert">
+        <span class="ruteo-alert-icon" aria-hidden="true">🚌</span>
+        <div style="font-size: 0.825rem; line-height: 1.45;">
+          <strong style="color: var(--ink); display: block; margin-bottom: 2px;">
+            Consultá el recorrido real en transporte público:
+          </strong>
+          Para ver las <strong>líneas de colectivo que realmente pasan por esa zona, paradas exactas y horarios en tiempo real</strong>, abrí el viaje con ambos puntos ya marcados en:
+        </div>
       </div>
 
-      <div class="ruteo-botones-directos">
-        <a href="${gmapsUrl}" target="_blank" rel="noopener noreferrer" class="btn-directo-viaje btn-directo-maps">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
-          Abrir en Google Maps (Colectivo)
+      <div class="ruteo-brand-buttons-stack">
+        <!-- BOTÓN GOOGLE MAPS CON LOGO OFICIAL MULTICOLOR -->
+        <a href="${gmapsUrl}" target="_blank" rel="noopener noreferrer" class="btn-brand-app btn-brand-maps" aria-label="Abrir recorrido en Google Maps">
+          <div class="btn-brand-left">
+            <div class="btn-brand-logo-wrap maps-logo-wrap">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="#4285F4"/>
+                <path d="M12 2C8.13 2 5 5.13 5 9c0 2.37 1.05 4.5 2.7 6l4.3-5V2z" fill="#34A853"/>
+                <path d="M12 10l-4.3 5c1.19 1.08 2.65 2.5 4.3 4.5.35.42.95.42 1.3 0 1.65-2 3.11-3.42 4.3-4.5L12 10z" fill="#FBBC04"/>
+                <path d="M12 2v8l4.7 5C18.95 13.5 19 11.37 19 9c0-3.87-3.13-7-7-7z" fill="#EA4335"/>
+                <circle cx="12" cy="9" r="2.5" fill="#ffffff"/>
+              </svg>
+            </div>
+            <div class="btn-brand-texts">
+              <span class="btn-brand-title">Google Maps</span>
+              <span class="btn-brand-desc">Modo Colectivo · Paradas y horarios en vivo</span>
+            </div>
+          </div>
+          <div class="btn-brand-action">
+            <span class="btn-brand-badge btn-brand-badge-maps">
+              Abrir viaje
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+            </span>
+          </div>
         </a>
-        <a href="${moovitUrl}" target="_blank" rel="noopener noreferrer" class="btn-directo-viaje btn-directo-moovit">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
-          Abrir en Moovit
+
+        <!-- BOTÓN MOOVIT CON LOGO OFICIAL DEL COLECTIVO -->
+        <a href="${moovitUrl}" target="_blank" rel="noopener noreferrer" class="btn-brand-app btn-brand-moovit" aria-label="Abrir recorrido en Moovit">
+          <div class="btn-brand-left">
+            <div class="btn-brand-logo-wrap moovit-logo-wrap">
+              <svg width="26" height="26" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+                <rect width="32" height="32" rx="7" fill="#ffffff"/>
+                <path d="M8 9.5C8 7.57 9.57 6 11.5 6h9C22.43 6 24 7.57 24 9.5v10c0 1.93-1.57 3.5-3.5 3.5h-9C9.57 23 8 21.43 8 19.5v-10z" fill="#FF5500"/>
+                <path d="M10.5 9h11v4.5h-11V9z" fill="#ffffff"/>
+                <circle cx="12" cy="17.5" r="1.5" fill="#ffffff"/>
+                <circle cx="20" cy="17.5" r="1.5" fill="#ffffff"/>
+                <path d="M14 18.8c.8.7 3.2.7 4 0" stroke="#ffffff" stroke-width="1.6" stroke-linecap="round"/>
+                <circle cx="10.5" cy="23.5" r="1.2" fill="#333333"/>
+                <circle cx="21.5" cy="23.5" r="1.2" fill="#333333"/>
+              </svg>
+            </div>
+            <div class="btn-brand-texts">
+              <span class="btn-brand-title">Moovit</span>
+              <span class="btn-brand-desc">Itinerarios y alertas de transporte público</span>
+            </div>
+          </div>
+          <div class="btn-brand-action">
+            <span class="btn-brand-badge btn-brand-badge-moovit">
+              Abrir viaje
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+            </span>
+          </div>
         </a>
       </div>
     `;

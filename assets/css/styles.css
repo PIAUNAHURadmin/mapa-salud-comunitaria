@@ -1971,46 +1971,183 @@ a:hover {
   border: 1px solid var(--action);
 }
 
-.ruteo-botones-directos {
+.ruteo-info-alert {
+  background-color: var(--surface-soft);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  padding: 12px 14px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.ruteo-alert-icon {
+  font-size: 1.35rem;
+  line-height: 1;
+  margin-top: 1px;
+}
+
+.ruteo-brand-buttons-stack {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin-top: 2px;
+  gap: 10px;
 }
-.btn-directo-viaje {
+
+.btn-brand-app {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-radius: var(--radius-card);
+  text-decoration: none;
+  transition: all var(--transition-fast);
+  cursor: pointer;
+  user-select: none;
+}
+
+.btn-brand-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.btn-brand-logo-wrap {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 10px 14px;
-  border-radius: var(--radius-control);
-  font-size: 0.875rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.btn-brand-texts {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  text-align: left;
+}
+
+.btn-brand-title {
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.2px;
+}
+
+.btn-brand-desc {
+  font-size: 0.775rem;
+  margin-top: 2px;
+  line-height: 1.3;
+}
+
+.btn-brand-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.775rem;
   font-weight: 700;
-  text-decoration: none;
+  padding: 6px 12px;
+  border-radius: 9999px;
+  white-space: nowrap;
   transition: all var(--transition-fast);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
-.btn-directo-maps {
-  background-color: #0284c7;
-  color: #ffffff;
-  border: 1px solid #0369a1;
+
+/* Google Maps Brand Style (Icono oficial de 4 colores y paleta Google) */
+.btn-brand-maps {
+  background-color: #ffffff;
+  border: 1.5px solid #dadce0;
+  color: #1f1f1f;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
 }
-.btn-directo-maps:hover {
-  background-color: #0369a1;
-  color: #ffffff;
-  transform: translateY(-1px);
-  box-shadow: 0 3px 8px rgba(2, 132, 199, 0.3);
+.btn-brand-maps .maps-logo-wrap {
+  background-color: #f8fafd;
+  border: 1px solid #e8eaed;
 }
-.btn-directo-moovit {
-  background-color: #ea580c;
-  color: #ffffff;
-  border: 1px solid #c2410c;
+.btn-brand-maps .btn-brand-title {
+  color: #1f1f1f;
 }
-.btn-directo-moovit:hover {
-  background-color: #c2410c;
+.btn-brand-maps .btn-brand-desc {
+  color: var(--muted);
+}
+.btn-brand-maps .btn-brand-badge-maps {
+  background-color: #e8f0fe;
+  color: #1a73e8;
+}
+.btn-brand-maps:hover {
+  background-color: #f8fafd;
+  border-color: #4285f4;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(66, 133, 244, 0.22);
+}
+.btn-brand-maps:hover .btn-brand-badge-maps {
+  background-color: #1a73e8;
   color: #ffffff;
-  transform: translateY(-1px);
-  box-shadow: 0 3px 8px rgba(234, 88, 12, 0.3);
+}
+
+/* Moovit Brand Style (Naranja oficial Moovit #FF5500 y logo del colectivo) */
+.btn-brand-moovit {
+  background: linear-gradient(135deg, #ff5500 0%, #eb4e00 100%);
+  border: 1.5px solid #d94500;
+  color: #ffffff;
+  box-shadow: 0 3px 10px rgba(255, 85, 0, 0.28);
+}
+.btn-brand-moovit .moovit-logo-wrap {
+  background-color: #ffffff;
+}
+.btn-brand-moovit .btn-brand-title {
+  color: #ffffff;
+}
+.btn-brand-moovit .btn-brand-desc {
+  color: rgba(255, 255, 255, 0.9);
+}
+.btn-brand-moovit .btn-brand-badge-moovit {
+  background-color: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+}
+.btn-brand-moovit:hover {
+  background: linear-gradient(135deg, #f04e00 0%, #db4600 100%);
+  border-color: #bf3c00;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 22px rgba(255, 85, 0, 0.42);
+}
+.btn-brand-moovit:hover .btn-brand-badge-moovit {
+  background-color: #ffffff;
+  color: #eb4e00;
+}
+
+/* Modal Cómo llegar extendido */
+.modal-dialog-box.modal-ruteo-dialog {
+  max-width: 560px;
+  border-radius: var(--radius-sheet);
+  border: 1px solid var(--line);
+  box-shadow: 0 24px 60px -12px rgba(23, 43, 52, 0.35), 0 8px 24px rgba(23, 43, 52, 0.12);
+  animation: modalPopIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modalPopIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.modal-header-icon-badge {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  border-radius: 10px;
+  background-color: var(--selected);
+  color: var(--action);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 @media (max-width: 1023px) {
