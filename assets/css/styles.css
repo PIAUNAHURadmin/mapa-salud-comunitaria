@@ -1971,166 +1971,24 @@ a:hover {
   border: 1px solid var(--action);
 }
 
-.ruteo-info-alert {
-  background-color: var(--surface-soft);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-control);
-  padding: 12px 14px;
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-}
-.ruteo-alert-icon {
-  font-size: 1.35rem;
-  line-height: 1;
-  margin-top: 1px;
-}
-
-.ruteo-brand-buttons-stack {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.btn-brand-app {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 16px;
-  border-radius: var(--radius-card);
-  text-decoration: none;
-  transition: all var(--transition-fast);
-  cursor: pointer;
-  user-select: none;
-}
-
-.btn-brand-left {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  min-width: 0;
-}
-
-.btn-brand-logo-wrap {
-  width: 44px;
-  height: 44px;
-  min-width: 44px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-}
-
-.btn-brand-texts {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  text-align: left;
-}
-
-.btn-brand-title {
-  font-size: 1rem;
-  font-weight: 800;
-  line-height: 1.2;
-  letter-spacing: -0.2px;
-}
-
-.btn-brand-desc {
-  font-size: 0.775rem;
-  margin-top: 2px;
-  line-height: 1.3;
-}
-
-.btn-brand-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 0.775rem;
-  font-weight: 700;
-  padding: 6px 12px;
-  border-radius: 9999px;
-  white-space: nowrap;
-  transition: all var(--transition-fast);
-}
-
-/* Google Maps Brand Style (Icono oficial de 4 colores y paleta Google) */
-.btn-brand-maps {
-  background-color: #ffffff;
-  border: 1.5px solid #dadce0;
-  color: #1f1f1f;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-}
-.btn-brand-maps .maps-logo-wrap {
-  background-color: #f8fafd;
-  border: 1px solid #e8eaed;
-}
-.btn-brand-maps .btn-brand-title {
-  color: #1f1f1f;
-}
-.btn-brand-maps .btn-brand-desc {
-  color: var(--muted);
-}
-.btn-brand-maps .btn-brand-badge-maps {
-  background-color: #e8f0fe;
-  color: #1a73e8;
-}
-.btn-brand-maps:hover {
-  background-color: #f8fafd;
-  border-color: #4285f4;
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(66, 133, 244, 0.22);
-}
-.btn-brand-maps:hover .btn-brand-badge-maps {
-  background-color: #1a73e8;
-  color: #ffffff;
-}
-
-/* Moovit Brand Style (Naranja oficial Moovit #FF5500 y logo del colectivo) */
-.btn-brand-moovit {
-  background: linear-gradient(135deg, #ff5500 0%, #eb4e00 100%);
-  border: 1.5px solid #d94500;
-  color: #ffffff;
-  box-shadow: 0 3px 10px rgba(255, 85, 0, 0.28);
-}
-.btn-brand-moovit .moovit-logo-wrap {
-  background-color: #ffffff;
-}
-.btn-brand-moovit .btn-brand-title {
-  color: #ffffff;
-}
-.btn-brand-moovit .btn-brand-desc {
-  color: rgba(255, 255, 255, 0.9);
-}
-.btn-brand-moovit .btn-brand-badge-moovit {
-  background-color: rgba(255, 255, 255, 0.2);
-  color: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.35);
-}
-.btn-brand-moovit:hover {
-  background: linear-gradient(135deg, #f04e00 0%, #db4600 100%);
-  border-color: #bf3c00;
-  transform: translateY(-2px);
-  box-shadow: 0 8px 22px rgba(255, 85, 0, 0.42);
-}
-.btn-brand-moovit:hover .btn-brand-badge-moovit {
-  background-color: #ffffff;
-  color: #eb4e00;
-}
-
-/* Modal Cómo llegar extendido */
+/* ==========================================================================
+   POPUP MODAL CÓMO LLEGAR (SEGÚN MOCKUP Y DESIGN SYSTEM)
+   ========================================================================== */
 .modal-dialog-box.modal-ruteo-dialog {
-  max-width: 560px;
-  border-radius: var(--radius-sheet);
+  max-width: 580px;
+  width: 100%;
+  border-radius: 12px;
   border: 1px solid var(--line);
-  box-shadow: 0 24px 60px -12px rgba(23, 43, 52, 0.35), 0 8px 24px rgba(23, 43, 52, 0.12);
-  animation: modalPopIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 20px 48px -8px rgba(23, 43, 52, 0.28), 0 4px 16px rgba(23, 43, 52, 0.08);
+  animation: modalPopIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+  background-color: #ffffff;
 }
 
 @keyframes modalPopIn {
   from {
     opacity: 0;
-    transform: scale(0.96) translateY(8px);
+    transform: scale(0.97) translateY(6px);
   }
   to {
     opacity: 1;
@@ -2138,16 +1996,210 @@ a:hover {
   }
 }
 
-.modal-header-icon-badge {
-  width: 40px;
-  height: 40px;
-  min-width: 40px;
-  border-radius: 10px;
-  background-color: var(--selected);
-  color: var(--action);
+.modal-header-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.modal-header-icon-circle {
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  border-radius: 9999px;
+  border: 1.5px solid var(--ink);
+  color: var(--ink);
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.modal-title-main {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.2;
+}
+
+.modal-subtitle-sub {
+  margin: 2px 0 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+  line-height: 1.3;
+}
+
+/* Tarjetas de Origen y Destino */
+.ruteo-duo-cards {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+
+.ruteo-box-card {
+  flex: 1;
+  background-color: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.ruteo-box-label {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.ruteo-box-main {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.3;
+  word-break: break-word;
+}
+
+.ruteo-destino-main {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ruteo-box-meta {
+  font-size: 0.775rem;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+  line-height: 1.3;
+}
+
+.ruteo-duo-arrow {
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* Divisor sutil entre secciones */
+.ruteo-section-divider {
+  height: 1px;
+  background-color: var(--line);
+  margin: 4px 0;
+}
+
+/* Sección Horarios y Paradas */
+.ruteo-horarios-header {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.ruteo-horarios-title {
+  margin: 0;
+  font-size: 0.975rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.ruteo-horarios-sub {
+  margin: 0;
+  font-size: 0.825rem;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Grid de Apps: Google Maps y Moovit */
+.ruteo-apps-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.ruteo-app-card {
+  background-color: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.ruteo-app-top {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ruteo-app-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ruteo-app-name {
+  font-size: 0.975rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.ruteo-app-desc {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+  line-height: 1.35;
+}
+
+.btn-abrir-viaje-app {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  padding: 6px 14px;
+  border-radius: 6px;
+  background-color: #ffffff;
+  border: 1.5px solid var(--action);
+  color: var(--action);
+  font-size: 0.825rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: all var(--transition-fast);
+  cursor: pointer;
+}
+
+.btn-abrir-viaje-app:hover {
+  background-color: var(--selected);
+  color: var(--action-focus);
+  border-color: var(--action-focus);
+  transform: translateY(-1px);
+}
+
+.btn-abrir-viaje-app:active {
+  transform: translateY(0);
+}
+
+@media (max-width: 639px) {
+  .ruteo-duo-cards {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .ruteo-duo-arrow {
+    transform: rotate(90deg);
+    margin: -2px 0;
+  }
+  .ruteo-apps-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 1023px) {

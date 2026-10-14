@@ -15,7 +15,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
     <!-- Estilos de diseño según Manual UX/UI UNAHUR (docs/UXUI.pdf) -->
-    <link rel="stylesheet" href="./assets/css/styles.css?v=20261014-7" />
+    <link rel="stylesheet" href="./assets/css/styles.css?v=20261014-8" />
   </head>
   <body>
     <!-- ============================ CABECERA INSTITUCIONAL ============================ -->
@@ -568,30 +568,30 @@
     <!-- ============================ MODAL CÓMO LLEGAR EN COLECTIVO ============================ -->
     <div class="modal-backdrop-custom" id="modal-como-llegar-container" role="dialog" aria-modal="true" aria-labelledby="modal-ruteo-titulo">
       <div class="modal-dialog-box modal-ruteo-dialog">
-        <div class="modal-header">
-          <div class="modal-header-title" id="modal-ruteo-titulo">
-            <span class="modal-header-icon-badge" aria-hidden="true">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
+        <div class="modal-header" style="padding: 16px 20px; border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between;">
+          <div class="modal-header-title-row">
+            <span class="modal-header-icon-circle" aria-hidden="true">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
             </span>
-            <div style="display: flex; flex-direction: column;">
-              <span style="font-size: 1.15rem; font-weight: 700; color: var(--ink); line-height: 1.2;">Cómo llegar al efector</span>
-              <span style="font-size: 0.8rem; font-weight: 500; color: var(--muted); margin-top: 2px;">Trayecto y transporte en tiempo real</span>
+            <div>
+              <h3 class="modal-title-main">Cómo llegar</h3>
+              <p class="modal-subtitle-sub">Opciones de transporte para vos</p>
             </div>
           </div>
-          <button type="button" class="btn-floating-close-x" id="btn-cerrar-modal-ruteo" aria-label="Cerrar ventana" title="Cerrar ventana">
-            ✕
+          <button type="button" class="btn-floating-close-x" id="btn-cerrar-modal-ruteo" aria-label="Cerrar ventana" title="Cerrar">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
         </div>
 
-        <div class="modal-body" id="modal-ruteo-cuerpo" style="padding: 20px 24px; display: flex; flex-direction: column; gap: 14px; overflow-y: auto;">
-          <!-- Contenido dinámico con ambos puntos marcados y botones oficiales -->
+        <div class="modal-body" id="modal-ruteo-cuerpo" style="padding: 18px 20px; display: flex; flex-direction: column; gap: 14px; overflow-y: auto;">
+          <!-- Contenido dinámico según diseño del mockup -->
         </div>
 
-        <div class="modal-footer" style="padding: 14px 24px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; background-color: var(--surface-soft);">
-          <button type="button" class="button button--secondary" id="btn-cerrar-modal-accion" style="min-height: 38px; padding: 0 18px; font-size: 0.875rem;">
+        <div class="modal-footer" style="padding: 14px 20px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; background-color: var(--surface-soft);">
+          <button type="button" class="button button--primary" id="btn-cerrar-modal-accion" style="min-height: 38px; padding: 0 20px; font-size: 0.875rem;">
             Ver en el mapa
           </button>
-          <span style="font-size: 0.775rem; color: var(--muted);">
+          <span style="font-size: 0.8rem; color: var(--muted);">
             Se abre en una pestaña nueva
           </span>
         </div>
@@ -630,6 +630,6 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <!-- Lógica de aplicación adaptada al Manual UX/UI con control de versión anti-caché -->
-    <script src="./assets/js/app.js?v=20261014-7"></script>
+    <script src="./assets/js/app.js?v=20261014-8"></script>
   </body>
 </html>
