@@ -15,7 +15,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
     <!-- Estilos de diseño según Manual UX/UI UNAHUR (docs/UXUI.pdf) -->
-    <link rel="stylesheet" href="./assets/css/styles.css?v=20261013-2" />
+    <link rel="stylesheet" href="./assets/css/styles.css?v=20261014-1" />
   </head>
   <body>
     <!-- ============================ CABECERA INSTITUCIONAL ============================ -->
@@ -252,33 +252,41 @@
               <!-- Filas dinámicas generadas en JavaScript -->
             </div>
           </div>
-
-          <!-- PANEL 2: RUTEO Y GUÍA EN COLECTIVO (Visible al pulsar Cómo llegar) -->
-          <div id="sidebar-panel-ruteo" class="sidebar-ruteo-box hidden">
-            <div class="ruteo-header-card">
-              <div class="sidebar-back-row" style="margin-bottom: 8px;">
-                <button type="button" class="sidebar-back-btn" id="btn-ruteo-volver">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
-                  <span id="btn-ruteo-volver-label">Volver</span>
-                </button>
-              </div>
-              <div style="font-weight: 700; font-size: 1.05rem; color: var(--ink); display: flex; align-items: center; gap: 8px;">
-                <span style="font-size: 1.25rem;">🚌</span>
-                <span>Cómo llegar en colectivo</span>
-              </div>
-              <div style="font-size: 0.825rem; color: var(--muted); margin-top: 4px;" id="ruteo-trayecto-subtitulo">
-                Trayecto sobre el mapa
-              </div>
-            </div>
-            <div class="ruteo-body-card" id="ruteo-contenido-sidebar">
-              <!-- Contenido dinámico del viaje -->
-            </div>
-          </div>
         </aside>
 
         <!-- Área del mapa Leaflet -->
         <div class="map-area-container">
           <div id="mapa" role="application" aria-label="Mapa interactivo de establecimientos de salud"></div>
+
+          <!-- Panel flotante de cómo llegar en la esquina superior izquierda del mapa (no obstruye el mapa) -->
+          <div id="panel-flotante-ruteo" class="floating-ruteo-panel hidden" role="region" aria-label="Indicaciones de cómo llegar en colectivo">
+            <div class="floating-ruteo-header">
+              <div class="floating-ruteo-title-wrap">
+                <span class="floating-ruteo-badge-bus" aria-hidden="true">🚌</span>
+                <div style="min-width: 0;">
+                  <h3 class="floating-ruteo-title">Cómo llegar en colectivo</h3>
+                  <p class="floating-ruteo-subtitle" id="floating-ruteo-subtitulo">Trayecto sobre el mapa</p>
+                </div>
+              </div>
+              <button type="button" class="btn-floating-close-x" id="btn-cerrar-ruteo-x" aria-label="Cerrar indicaciones" title="Cerrar">
+                ✕
+              </button>
+            </div>
+            <div class="floating-ruteo-body" id="floating-ruteo-contenido">
+              <!-- Pasos dinámicos del viaje generados por JS -->
+            </div>
+            <div class="floating-ruteo-footer">
+              <a id="btn-ruteo-maps" href="#" target="_blank" rel="noopener noreferrer" class="btn-accion-ruteo btn-accion-ruteo-maps" title="Abrir en Google Maps">
+                Google Maps
+              </a>
+              <a id="btn-ruteo-moovit" href="#" target="_blank" rel="noopener noreferrer" class="btn-accion-ruteo btn-accion-ruteo-moovit" title="Abrir en Moovit">
+                Moovit
+              </a>
+              <button type="button" class="btn-accion-ruteo btn-accion-ruteo-cerrar" id="btn-floating-cerrar" title="Cerrar ventana">
+                Cerrar
+              </button>
+            </div>
+          </div>
 
           <!-- Controles flotantes accesibles en el mapa -->
           <div class="map-floating-controls" aria-label="Controles del mapa">
@@ -620,6 +628,6 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <!-- Lógica de aplicación adaptada al Manual UX/UI con control de versión anti-caché -->
-    <script src="./assets/js/app.js?v=20261013-2"></script>
+    <script src="./assets/js/app.js?v=20261014-1"></script>
   </body>
 </html>

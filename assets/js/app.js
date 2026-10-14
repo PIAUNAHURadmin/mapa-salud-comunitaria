@@ -305,17 +305,17 @@
       const distBadge = r._dist != null && isFinite(r._dist) ? `<span class="result-distance">${formatDistancia(r._dist)}</span> · ` : "";
       const horarioText = "Horario no informado"; // Criterio estricto Página 8
 
-      const item = document.createElement("button");
-      item.type = "button";
+      const item = document.createElement("div");
       item.className = "result-card-item";
       item.setAttribute("role", "article");
+      item.setAttribute("tabindex", "0");
       item.setAttribute("aria-label", `${r.nombre}, en ${r.partido}`);
       if (state.efectorSeleccionado && state.efectorSeleccionado.nombre === r.nombre) {
         item.classList.add("active");
       }
 
       item.innerHTML = `
-        <div style="display: flex; align-items: flex-start; gap: var(--space-3); width: 100%;">
+        <div class="result-card-main-row">
           <div class="result-icon-badge ${isHospital ? "hospital" : "caps"}" aria-hidden="true">
             ${isHospital ? "🏥" : "🏠"}
           </div>
@@ -335,12 +335,14 @@
             </span>
           </div>
         </div>
-        <div style="display: flex; gap: 8px; width: 100%; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line);">
-          <button type="button" class="button button--secondary btn-card-llegar" style="flex: 1; min-height: 32px; padding: 4px 8px; font-size: 0.775rem;">
-            🚌 Cómo llegar
+        <div class="result-card-actions">
+          <button type="button" class="btn-card-llegar" title="Ver itinerario de colectivos">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/></svg>
+            Cómo llegar
           </button>
-          <button type="button" class="button button--ghost btn-card-ver" style="min-height: 32px; padding: 4px 8px; font-size: 0.775rem; color: var(--action);">
+          <button type="button" class="btn-card-ver" title="Ver ficha completa">
             Ver ficha
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
           </button>
         </div>
       `;
@@ -367,6 +369,14 @@
       // Clic en la fila completa
       item.addEventListener("click", () => {
         abrirFicha(r);
+      });
+
+      // Accesibilidad de teclado (Enter / Espacio abre la ficha)
+      item.addEventListener("keydown", (e) => {
+        if ((e.key === "Enter" || e.key === " ") && e.target === item) {
+          e.preventDefault();
+          abrirFicha(r);
+        }
       });
 
       return item;
@@ -731,6 +741,9 @@
   }
 
   function fijarUbicacionUsuario(lat, lon, label = "Tu ubicación") {
+    // Requisito 1: Al cambiar la ubicación actual, borrar la línea de "Cómo llegar" si existe
+    borrarRutaColectivo();
+
     state.ubicacion = { lat, lon, label };
 
     if (!map) initMap();
@@ -770,6 +783,23 @@
     return cer;
   }
 
+  function borrarRutaColectivo() {
+    if (lineaRutaMapa && map) {
+      map.removeLayer(lineaRutaMapa);
+      lineaRutaMapa = null;
+    }
+    cerrarRuteoFlotante();
+  }
+
+  function cerrarRuteoFlotante() {
+    const panel = $("panel-flotante-ruteo");
+    if (panel) panel.classList.add("hidden");
+    const mobileRuteo = $("mobile-ruteo-container");
+    if (mobileRuteo) mobileRuteo.classList.add("hidden");
+    const mobileResultsList = $("mobile-results-list");
+    if (mobileResultsList) mobileResultsList.classList.remove("hidden");
+  }
+
   async function mostrarComoLlegar(r, origenTrigger = "ficha") {
     state.origenRuteo = origenTrigger;
     state.efectorSeleccionado = r;
@@ -777,23 +807,9 @@
     // 1. Pasar inmediatamente a la vista de Mapa para que el usuario VEA el mapa con el trayecto
     activarVista("mapa");
 
-    // 2. Ocultar panel de filtros y mostrar panel de ruteo en el sidebar (escritorio) y sheet (móvil)
+    // 2. Asegurar que el sidebar izquierdo mantenga el listado visible
     const panelFiltros = $("sidebar-panel-filtros");
-    const panelRuteo = $("sidebar-panel-ruteo");
-    const ruteoContenido = $("ruteo-contenido-sidebar");
-    const mobileResultsList = $("mobile-results-list");
-    const mobileRuteoContainer = $("mobile-ruteo-container");
-    const btnVolverLabel = $("btn-ruteo-volver-label");
-    const ruteoSubtitulo = $("ruteo-trayecto-subtitulo");
-
-    if (panelFiltros) panelFiltros.classList.add("hidden");
-    if (panelRuteo) panelRuteo.classList.remove("hidden");
-    if (mobileResultsList) mobileResultsList.classList.add("hidden");
-    if (mobileRuteoContainer) mobileRuteoContainer.classList.remove("hidden");
-
-    if (btnVolverLabel) {
-      btnVolverLabel.textContent = origenTrigger === "ficha" ? "Volver a la ficha del centro" : "Volver a resultados";
-    }
+    if (panelFiltros) panelFiltros.classList.remove("hidden");
 
     // 3. Determinar origen (GPS si existe, o centroide de Hurlingham/partido cercano)
     let origenLat, origenLon, origenNombre;
@@ -810,11 +826,8 @@
 
     const origenPartido = obtenerMunicipioCercano(origenLat, origenLon);
     const destinoPartido = r.partido;
-    const esMismoPartido = origenPartido === destinoPartido;
 
-    if (ruteoSubtitulo) {
-      ruteoSubtitulo.textContent = `${origenPartido} ➔ ${r.nombre} (${destinoPartido})`;
-    }
+    setText("floating-ruteo-subtitulo", `${origenPartido} ➔ ${r.nombre} (${destinoPartido})`);
 
     // 4. Calcular traza real sobre calles con OSRM
     let distKm = haversineKm(origenLat, origenLon, r.lat, r.lon);
@@ -848,7 +861,7 @@
         lineJoin: "round"
       }).addTo(map);
 
-      // Ajustar encuadre del mapa para que el usuario vea TODO el recorrido trazado
+      // Ajustar encuadre del mapa para que el usuario vea el recorrido trazado
       map.fitBounds(lineaRutaMapa.getBounds().pad(0.25));
 
       // Abrir popup en el destino
@@ -861,9 +874,6 @@
 
     // 6. Líneas de colectivos
     const lineasDestino = COLECTIVOS.lineas_por_partido[destinoPartido] || [];
-    const interurbanas = (COLECTIVOS.conexiones_interurbanas || []).filter(
-      (c) => (c.origen === origenPartido && c.destino === destinoPartido) || (c.origen === destinoPartido && c.destino === origenPartido)
-    );
 
     let colectivosHtml = "";
     if (lineasDestino.length > 0) {
@@ -929,30 +939,41 @@
       </div>
 
       ${colectivosHtml}
-
-      <div>
-        <strong style="font-size: 0.85rem; color: var(--ink);">Navegar en tiempo real:</strong>
-        <div class="ruteo-ext-buttons">
-          <a href="${gmapsUrl}" target="_blank" rel="noopener noreferrer" class="button button--secondary" style="font-size: 0.8rem; min-height: 38px; padding: 6px;">
-            Google Maps
-          </a>
-          <a href="${moovitUrl}" target="_blank" rel="noopener noreferrer" class="button button--secondary" style="font-size: 0.8rem; min-height: 38px; padding: 6px;">
-            Moovit
-          </a>
-        </div>
-      </div>
-
-      <div style="margin-top: 4px;">
-        <button type="button" class="button button--primary" onclick="window.volverDesdeRuteo()" style="width: 100%; min-height: 42px; font-size: 0.875rem;">
-          ${origenTrigger === "ficha" ? "Volver a la ficha del centro" : "Volver a la lista de resultados"}
-        </button>
-      </div>
     `;
 
+    // 7. Mostrar panel flotante en la esquina superior izquierda del mapa
+    const ruteoContenido = $("floating-ruteo-contenido");
     if (ruteoContenido) ruteoContenido.innerHTML = ruteoInfoHtml;
-    if (mobileRuteoContainer) mobileRuteoContainer.innerHTML = ruteoInfoHtml;
 
-    // En móvil, asegurar que el bottom sheet se despliegue para leer los pasos
+    const btnMaps = $("btn-ruteo-maps");
+    if (btnMaps) btnMaps.href = gmapsUrl;
+
+    const btnMoovit = $("btn-ruteo-moovit");
+    if (btnMoovit) btnMoovit.href = moovitUrl;
+
+    const panelFlotante = $("panel-flotante-ruteo");
+    if (panelFlotante) panelFlotante.classList.remove("hidden");
+
+    // Sincronizar en móvil si corresponde
+    const mobileRuteoContainer = $("mobile-ruteo-container");
+    if (mobileRuteoContainer) {
+      mobileRuteoContainer.innerHTML = `
+        ${ruteoInfoHtml}
+        <div style="margin-top: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+          <a href="${gmapsUrl}" target="_blank" rel="noopener noreferrer" class="btn-accion-ruteo btn-accion-ruteo-maps">Google Maps</a>
+          <a href="${moovitUrl}" target="_blank" rel="noopener noreferrer" class="btn-accion-ruteo btn-accion-ruteo-moovit">Moovit</a>
+        </div>
+        <div style="margin-top: 10px;">
+          <button type="button" class="button button--secondary" onclick="window.cerrarRuteoFlotante()" style="width: 100%; min-height: 40px;">
+            Cerrar itinerario
+          </button>
+        </div>
+      `;
+      const mobileResultsList = $("mobile-results-list");
+      if (mobileResultsList) mobileResultsList.classList.add("hidden");
+      mobileRuteoContainer.classList.remove("hidden");
+    }
+
     const sheet = $("mobile-bottom-sheet");
     if (sheet) {
       sheet.classList.add("expanded");
@@ -963,18 +984,9 @@
   }
 
   function volverDesdeRuteo() {
+    cerrarRuteoFlotante();
     if (state.origenRuteo === "ficha" && state.efectorSeleccionado) {
       activarVista("ficha");
-    } else {
-      const panelFiltros = $("sidebar-panel-filtros");
-      const panelRuteo = $("sidebar-panel-ruteo");
-      const mobileResultsList = $("mobile-results-list");
-      const mobileRuteoContainer = $("mobile-ruteo-container");
-
-      if (panelFiltros) panelFiltros.classList.remove("hidden");
-      if (panelRuteo) panelRuteo.classList.add("hidden");
-      if (mobileResultsList) mobileResultsList.classList.remove("hidden");
-      if (mobileRuteoContainer) mobileRuteoContainer.classList.add("hidden");
     }
   }
 
@@ -1178,7 +1190,9 @@
       setText("sheet-toggle-text", "Contraer resultados");
     });
 
-    // Botón volver desde Ruteo
+    // Panel flotante Cómo llegar en colectivo (esquina superior izquierda)
+    $("btn-cerrar-ruteo-x")?.addEventListener("click", cerrarRuteoFlotante);
+    $("btn-floating-cerrar")?.addEventListener("click", cerrarRuteoFlotante);
     $("btn-ruteo-volver")?.addEventListener("click", () => volverDesdeRuteo());
 
     // Modal Cómo llegar (fallback)
@@ -1194,6 +1208,7 @@
 
   // Funciones expuestas globalmente
   window.limpiarTodosFiltros = function () {
+    borrarRutaColectivo();
     state.categoria = "todas";
     state.municipio = "";
     state.texto = "";
@@ -1206,6 +1221,14 @@
       chip.classList.toggle("active", chip.getAttribute("data-cat") === "todas");
     });
     filtrarEfectores();
+  };
+
+  window.cerrarRuteoFlotante = function () {
+    cerrarRuteoFlotante();
+  };
+
+  window.borrarRutaColectivo = function () {
+    borrarRutaColectivo();
   };
 
   window.abrirFichaDesdeMapa = function (nombre) {
