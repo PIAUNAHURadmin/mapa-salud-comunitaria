@@ -1,27 +1,47 @@
 {
- "total_efectores": 313,
+ "total_efectores": 242,
  "total_municipios": 10,
  "por_municipio": {
   "General Las Heras": 6,
-  "General Rodríguez": 35,
-  "Hurlingham": 23,
-  "Ituzaingó": 21,
-  "Luján": 37,
-  "Marcos Paz": 15,
-  "Merlo": 48,
-  "Moreno": 75,
-  "Morón": 35,
-  "Tres de Febrero": 18
+  "General Rodríguez": 26,
+  "Hurlingham": 18,
+  "Ituzaingó": 19,
+  "Luján": 32,
+  "Marcos Paz": 9,
+  "Merlo": 39,
+  "Moreno": 54,
+  "Morón": 23,
+  "Tres de Febrero": 16
  },
  "por_categoria": {
-  "EFECTORES DE SALUD PÚBLICA": 229,
-  "NUTRICIÓN Y ALIMENTACIÓN": 84
+  "EFECTORES DE SALUD PÚBLICA": 240,
+  "ENFERMEDADES CRÓNICAS NO TRASMISIBLES": 22,
+  "ENFERMEDADES TRANSMISIBLES": 87,
+  "NUTRICIÓN Y ALIMENTACIÓN": 84,
+  "POBLACIONES ESPECIFICAS": 15,
+  "ATENCION CLÍNICA GENERAL (hospitalaria)": 6,
+  "SALUD SEXUAL, REPRODUCTVA Y DE GÉNERO": 16,
+  "URGENCIAS Y GUARDIA": 4,
+  "DISCAPACIDAD Y REHABILITACION": 1
+ },
+ "por_subcategoria": {
+  "Primer Nivel": 207,
+  "Oncología (derivación)": 22,
+  "VIH/ITS": 87,
+  "Consultorios de nutrición": 84,
+  "Primera infancia": 15,
+  "GINECOLOGÍA Y OBSTETRICIA": 6,
+  "Segundo Nivel": 30,
+  "Anticoncepción / ILE-IVE": 16,
+  "Tercer Nivel": 3,
+  "Guardia 24 hs": 4,
+  "Certificado Único de Discapacidad (CUD)": 1
  },
  "por_nivel": {
-  "Primer Nivel": 196,
+  "Primer Nivel": 207,
   "Segundo Nivel": 30,
-  "Tercer Nivel": 3,
-  "Consultorios (nutrición)": 84
+  "Tercer Nivel": 4,
+  "Sin nivel": 1
  },
- "categorias": 13
+ "categorias": 12
 }

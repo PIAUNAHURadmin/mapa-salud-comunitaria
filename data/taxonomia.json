@@ -192,7 +192,7 @@
   ]
  },
  {
-  "categoria": "NUTRICION Y ALIMENTACION",
+  "categoria": "NUTRICIÓN Y ALIMENTACIÓN",
   "subcategorias": [
    {
     "nombre": "Consultorios de nutrición",
@@ -288,29 +288,6 @@
   "subcategorias": [
    {
     "nombre": "Provisión de medicamentos gratuitos / botiquín comunitario EXREMEDIAR MEDICAMENTOS BONAERENSES - SOLICITUD O INSCRIPCION AL PROGRAMA",
-    "municipios": [
-     "General Las Heras"
-    ]
-   }
-  ]
- },
- {
-  "categoria": "EFECTORES DE SALUD PUBLICA",
-  "subcategorias": [
-   {
-    "nombre": "PRIMER NIVEL",
-    "municipios": [
-     "General Las Heras"
-    ]
-   },
-   {
-    "nombre": "SEGUNDO NIVEL",
-    "municipios": [
-     "General Las Heras"
-    ]
-   },
-   {
-    "nombre": "TERCER NIVEL entrar a poblaciones .org y van a encontar ",
     "municipios": [
      "General Las Heras"
     ]

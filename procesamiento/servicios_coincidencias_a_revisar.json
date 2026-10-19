@@ -1,0 +1,72 @@
+[
+ {
+  "fuente": "DR. MARCOS LANGAN",
+  "establecimiento": "CAPS DR. MARCOS LANGAN",
+  "partido": "General Las Heras",
+  "criterio": "nombre parecido",
+  "archivo": "Oncología/Ecografías mamarias.pdf"
+ },
+ {
+  "fuente": "Unidad Sanitaria Angel Bo",
+  "establecimiento": "UNIDAD SANITARIA BARRIO ANGEL",
+  "partido": "Hurlingham",
+  "criterio": "palabras clave del nombre",
+  "archivo": "Programa Qunita/HURLINGHAM.pdf"
+ },
+ {
+  "fuente": "Centro de Salud San José Obrero",
+  "establecimiento": "UNIDAD SANITARIA SAN J. OBRERO",
+  "partido": "Hurlingham",
+  "criterio": "domicilio",
+  "archivo": "Programa Qunita/HURLINGHAM.pdf"
+ },
+ {
+  "fuente": "Centro de Salud Ramón Carrillo",
+  "establecimiento": "CENTRO DE SALUD DR. RAMON CARRILLO",
+  "partido": "Hurlingham",
+  "criterio": "nombre parecido",
+  "archivo": "Programa Qunita/HURLINGHAM.pdf"
+ },
+ {
+  "fuente": "Centro de Salud Barrio Mitre",
+  "establecimiento": "UNIDAD SANITARIA BARTOLOME MITRE DE HURLINGHAM",
+  "partido": "Hurlingham",
+  "criterio": "domicilio",
+  "archivo": "Programa Qunita/HURLINGHAM.pdf"
+ },
+ {
+  "fuente": "Centro de Salud 2 de Junio",
+  "establecimiento": "UNIDAD SANITARIA 2 DE JUNIO DE HURLINGHAM",
+  "partido": "Hurlingham",
+  "criterio": "palabras clave del nombre",
+  "archivo": "Programa Qunita/HURLINGHAM.pdf"
+ },
+ {
+  "fuente": "Centro de Salud Eva Perón",
+  "establecimiento": "UNIDAD SANITARIA EVA PERON DE HURLINGHAM",
+  "partido": "Hurlingham",
+  "criterio": "palabras clave del nombre",
+  "archivo": "Programa Qunita/HURLINGHAM.pdf"
+ },
+ {
+  "fuente": "Centro de Salud 2 de Abril",
+  "establecimiento": "UNIDAD SANITARIA 2 DE ABRIL DE HURLINGHAM",
+  "partido": "Hurlingham",
+  "criterio": "palabras clave del nombre",
+  "archivo": "Programa Qunita/HURLINGHAM.pdf"
+ },
+ {
+  "fuente": "Centro de Salud El Libertador",
+  "establecimiento": "UNIDAD SANITARIA BARRIO LIBERTADOR",
+  "partido": "Hurlingham",
+  "criterio": "palabras clave del nombre",
+  "archivo": "Programa Qunita/HURLINGHAM.pdf"
+ },
+ {
+  "fuente": "Unidad Sanitaria San Damián y Morris",
+  "establecimiento": "CENTRO DE SALUD SAN DAMIAN Y MORRIS",
+  "partido": "Hurlingham",
+  "criterio": "palabras clave del nombre",
+  "archivo": "Programa Qunita/HURLINGHAM.pdf"
+ }
+]

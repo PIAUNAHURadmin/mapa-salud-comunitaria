@@ -757,5 +757,11 @@
   "lon": -58.5240939,
   "display_name": "403 - Avenida América, Sáenz Peña, Partido de Tres de Febrero, Buenos Aires, B1674ATA, Argentina"
  },
- "carlos guido spano, tres de febrero, buenos aires, argentina": null
+ "carlos guido spano, tres de febrero, buenos aires, argentina": null,
+ "upa 20, general rodríguez, buenos aires, argentina": null,
+ "avenida vergara 3020, hurlingham, buenos aires, argentina": {
+  "lat": -34.6026408,
+  "lon": -58.6354268,
+  "display_name": "Avenida Gobernador Valentín Vergara, Parque Quirno, Hurlingham, Partido de Hurlingham, Buenos Aires, B1686, Argentina"
+ }
 }
