@@ -177,6 +177,7 @@ panel-salud-comunitaria/
 * [`docs/DICCIONARIO_DATOS.md`](./docs/DICCIONARIO_DATOS.md) — Estructura y tipos de datos de efectores, municipios y transporte.
 * [`docs/PROCESO_DATOS.md`](./docs/PROCESO_DATOS.md) — Procedimiento de extracción, depuración y estrategias de georreferenciación.
 * [`docs/FUENTES.md`](./docs/FUENTES.md) — Fuentes institucionales del Ministerio de Salud provincial y repositorio de enlaces.
+* [`docs/IMPLEMENTACION_WORDPRESS.md`](./docs/IMPLEMENTACION_WORDPRESS.md) — Guía y plan de integración técnica para embeber el panel en WordPress.
 * [`docs/Documentacion_Panel_Salud_Comunitaria.pdf`](./docs/Documentacion_Panel_Salud_Comunitaria.pdf) — Documentación técnica oficial en formato PDF.
 
 ---

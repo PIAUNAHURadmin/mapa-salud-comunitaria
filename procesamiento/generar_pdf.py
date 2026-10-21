@@ -211,7 +211,7 @@ html = f"""<!doctype html><html lang="es"><head><meta charset="utf-8">
       <tr><td><code>assets/js/app.js</code></td><td>Lógica de aplicación, Leaflet, Haversine, persistencia y vistas.</td></tr>
       <tr><td><code>data/</code></td><td>Base de datos normalizada (efectores, municipios, taxonomía y colectivos en JSON + JS).</td></tr>
       <tr><td><code>docs/UXUI.pdf</code></td><td>Manual de Estilo e Interfaz de Usuario oficial (UNAHUR).</td></tr>
-      <tr><td><code>docs/</code></td><td>Documentación técnica: README, diccionario, proceso, fuentes y PDF.</td></tr>
+      <tr><td><code>docs/</code></td><td>Documentación técnica: README, diccionario, proceso, fuentes, guía de integración WordPress y PDF.</td></tr>
       <tr><td><code>procesamiento/</code></td><td>Scripts de extracción, geocodificación, exportación y generación documental.</td></tr>
     </tbody>
   </table>
