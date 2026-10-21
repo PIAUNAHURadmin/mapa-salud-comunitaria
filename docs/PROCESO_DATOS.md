@@ -108,7 +108,7 @@ no se incorporaron al panel.
 
 ## 6. Módulo de transporte público (Colectivos) y ruteo
 
-Para dar respuesta a la accesibilidad física a los efectores de salud, se incorporó una capa de movilidad basada en transporte público automotor (colectivos) diseñada bajo arquitectura 100% estática para el cliente:
+Para dar respuesta a la accesibilidad física a los efectores de salud, se diseñó una solución de movilidad precisa, resiliente y de cero mantenimiento de backend:
 
 1. **Relevamiento y estructura de datos (`colectivos.json`)**:
    - Se compilaron las principales líneas comunales, provinciales e interurbanas que circulan en los 10 municipios de la Región Sanitaria VII.
@@ -118,11 +118,11 @@ Para dar respuesta a la accesibilidad física a los efectores de salud, se incor
 2. **Pipeline de exportación (`export_js.py`)**:
    - El script `procesamiento/export_js.py` lee `data/colectivos.json` y genera automáticamente `data/colectivos.js` definiendo la variable global `window.COLECTIVOS`. Esto permite abrir el proyecto haciendo doble clic directamente en `index.html` sin requerir servidor web ni backend.
 
-3. **Cálculo y trazado de ruta en cliente**:
-   - **Trazado vial real (OSRM)**: El cliente realiza una consulta asíncrona a la API pública de Open Source Routing Machine (`router.project-osrm.org`) utilizando las coordenadas de origen del usuario y de destino del efector, obteniendo la geometría precisa sobre la red de calles y avenidas.
-   - **Fallback resiliente**: Si el usuario no dispone de conexión al servicio de ruteo o falla la respuesta externa, el mapa dibuja una traza geodésica punteada directa calculando la distancia y tiempo estimado mediante la fórmula de Haversine.
-   - **Guía paso a paso**: El sistema compara el partido del usuario con el del efector. Si coinciden, sugiere las líneas comunales directas. Si difieren, indica el trasbordo interurbano correspondiente, la línea a abordar, dónde descender y el tramo de caminata final.
-   - **Integración profunda (Deep Linking)**: Se generan enlaces directos precargados a Google Maps (modo tránsito) y Moovit para que el usuario consulte frecuencias y horarios en tiempo real si lo desea.
+3. **Estrategia de ruteo y tránsito en tiempo real (Delegación oficial)**:
+   - **Eliminación de trazados ficticios**: Para evitar desinformar a los usuarios con rutas automovilísticas aproximadas o líneas de colectivo simuladas (que no reflejaban paradas oficiales, sentidos de circulación ni frecuencias horarias reales), se eliminó la dependencia de cálculos ficticios vía OSRM y se implementó una integración profunda mediante **Deep Links parametrizados con coordenadas exactas**.
+   - **Google Maps Transit API / URL Scheme**: Genera enlaces parametrizados en modo tránsito (`travelmode=transit`) pasando origen y destino exactos (`origin={lat},{lon}&destination={lat},{lon}`), permitiendo al usuario conocer qué colectivo tomar, paradas oficiales, horarios programados y demoras en vivo.
+   - **Moovit Web API / Deep Link**: Genera enlaces directos a la plataforma de transporte metropolitano con coordenadas geográficas (`orig_lat={lat}&orig_lng={lon}&dest_lat={lat}&dest_lng={lon}`), ofreciendo alertas de servicio y opciones de combinación interurbana.
+   - **Visualización en el mapa interactivo**: Al solicitar *"Cómo llegar"*, el mapa posiciona automáticamente el **Punto A (Origen)** y el **Punto B (Destino)**, traza una línea guía discontinua institucional (`L.polyline` celeste `#08a2c4`), ajusta dinámicamente el zoom (`map.fitBounds`) para encuadrar ambos extremos con padding, y abre el modal institucional de viaje.
 
 4. **Despliegue y hosting continuo (GitHub Pages)**:
    - Dado que la solución está diseñada bajo una arquitectura 100% estática (sin requerir servidor backend ni bases de datos activas en runtime), el proyecto se publica directamente en la web a través de **GitHub Pages**:

@@ -67,12 +67,13 @@ code{background:#eef2f6;padding:1pt 4pt;border-radius:3px;font-size:9pt}
 
   <h3>Funcionalidades del panel</h3>
   <ul>
-    <li>Mapa interactivo con puntos por nivel de atención y disciplina.</li>
-    <li>Filtros por <strong>categoría → servicio → municipio</strong> y búsqueda por texto libre.</li>
-    <li>Indicación de la ubicación del usuario (GPS, domicilio o clic en el mapa).</li>
-    <li>Ordenamiento de resultados por <strong>distancia</strong> (kilómetros/metros).</li>
-    <li>Detalle de cada efector: domicilio, teléfono y nivel de atención.</li>
-    <li><strong>Ruteo en transporte público (colectivos)</strong>: trazado real sobre la red de calles y avenidas (OSRM), líneas de colectivo comunales e interurbanas sugeridas según el origen y destino, guía de navegación paso a paso con puntos de trasbordo y enlaces parametrizados a Google Maps y Moovit.</li>
+    <li><strong>Arquitectura SPA (Single Page Application)</strong>: navegación fluida sin recargas entre 5 vistas (Inicio, Mapa y resultados, Ficha de establecimiento, Mis favoritos y Sobre el proyecto).</li>
+    <li><strong>Vista Inicio</strong>: portada institucional con buscador predictivo, botón GPS, 8 categorías de atención en cuadrícula y métricas del sistema.</li>
+    <li><strong>Mapa interactivo y resultados</strong>: motor Leaflet con teselas claras de calles, marcadores SVG vectoriales diferenciados (Hospitales y CAPS), chips con scroll horizontal y lista con cálculo de distancia geodésica (Haversine).</li>
+    <li><strong>Ficha de establecimiento</strong>: detalle de contacto con discado telefónico directo (<code>tel:</code>), prestaciones confirmadas con tildes verdes, badges de accesibilidad física e infraestructura (acceso adaptado, estacionamiento, consultorios).</li>
+    <li><strong>Mis Favoritos</strong>: persistencia local en el navegador (<code>localStorage</code>) con contadores sincronizados en header y barra móvil, y notificaciones contextuales con opción de "Deshacer".</li>
+    <li><strong>Ruteo y movilidad en transporte público</strong>: popup modal y panel flotante adaptados al diseño institucional (Punto A Origen y Punto B Destino, distancia estimada, línea guía en mapa y enlaces directos a Google Maps y Moovit con horarios y paradas en tiempo real).</li>
+    <li><strong>Diseño adaptativo (Mobile-First)</strong>: barra de navegación inferior (Bottom Navigation Bar), menú lateral (Drawer) y panel inferior deslizable (Bottom Sheet).</li>
   </ul>
 
   <h3>Alcance territorial — Región Sanitaria VII</h3>
@@ -148,7 +149,7 @@ code{background:#eef2f6;padding:1pt 4pt;border-radius:3px;font-size:9pt}
     <li><strong>Normalización</strong>: unificación de nombres de municipio (acentos, mayúsculas) y deduplicación.</li>
     <li><strong>Georreferenciación</strong>: resolución de domicilios con OpenStreetMap / Nominatim.</li>
     <li><strong>Taxonomía</strong>: 13 categorías y 45 subcategorías a partir del repositorio de enlaces.</li>
-    <li><strong>Transporte y movilidad</strong>: modelado de líneas comunales e interurbanas de la RS VII y trazado vial interactivo con OSRM.</li>
+    <li><strong>Transporte y movilidad</strong>: modelado de líneas de la RS VII y delegación de itinerarios a Google Maps Transit y Moovit con coordenadas exactas y trazado guía en Leaflet.</li>
   </ul>
 
   <h3>Georreferenciación — transparencia</h3>
@@ -176,10 +177,12 @@ code{background:#eef2f6;padding:1pt 4pt;border-radius:3px;font-size:9pt}
   <table>
     <thead><tr><th>Carpeta / archivo</th><th>Contenido</th></tr></thead>
     <tbody>
-      <tr><td><code>index.html</code></td><td>Panel interactivo (abrir con doble clic).</td></tr>
-      <tr><td><code>assets/</code></td><td>Estilos (CSS compilado tema oscuro <code>salud</code>), lógica del mapa y ruteo (JS) e imágenes.</td></tr>
+      <tr><td><code>index.html</code></td><td>Panel interactivo SPA (5 vistas, modal de ruteo, responsive).</td></tr>
+      <tr><td><code>assets/css/styles.css</code></td><td>Sistema de diseño UX/UI institucional (tema claro, tokens, a11y).</td></tr>
+      <tr><td><code>assets/js/app.js</code></td><td>Lógica de aplicación, Leaflet, Haversine, persistencia y vistas.</td></tr>
       <tr><td><code>data/</code></td><td>Base de datos normalizada (efectores, municipios, taxonomía y colectivos en JSON + JS).</td></tr>
-      <tr><td><code>docs/</code></td><td>Documentación: README, diccionario de datos, proceso, fuentes y PDF.</td></tr>
+      <tr><td><code>docs/UXUI.pdf</code></td><td>Manual de Estilo e Interfaz de Usuario oficial (UNAHUR).</td></tr>
+      <tr><td><code>docs/</code></td><td>Documentación técnica: README, diccionario, proceso, fuentes y PDF.</td></tr>
       <tr><td><code>procesamiento/</code></td><td>Scripts de extracción, geocodificación, exportación y generación documental.</td></tr>
     </tbody>
   </table>
@@ -193,9 +196,10 @@ code{background:#eef2f6;padding:1pt 4pt;border-radius:3px;font-size:9pt}
     <thead><tr><th>Capa</th><th>Tecnología</th></tr></thead>
     <tbody>
       <tr><td>Hosting</td><td>GitHub Pages (<a href="https://piaunahuradmin.github.io/mapa-salud-comunitaria/">piaunahuradmin.github.io/mapa-salud-comunitaria</a>)</td></tr>
-      <tr><td>Interfaz</td><td>HTML + daisyUI / Tailwind CSS (tema oscuro personalizado <code>salud</code>)</td></tr>
-      <tr><td>Mapa</td><td>Leaflet + teselas Esri Dark Gray Canvas</td></tr>
-      <tr><td>Ruteo vial</td><td>OSRM (OpenStreetMap Routing) para trazado sobre calles y avenidas</td></tr>
+      <tr><td>Interfaz</td><td>HTML5 + CSS3 institucional (Manual UX/UI UNAHUR, tema claro, tipografía Inter)</td></tr>
+      <tr><td>Mapa</td><td>Leaflet 1.9.4 + teselas claras Esri ArcGIS World_Street_Map (sin bloqueos 403 ni API keys)</td></tr>
+      <tr><td>Ruteo y Movilidad</td><td>Google Maps Transit API y Moovit (deep links con coordenadas exactas) + Polyline guía en Leaflet</td></tr>
+      <tr><td>Persistencia</td><td>Web Storage API (localStorage) para gestión de favoritos sin backend</td></tr>
       <tr><td>Datos</td><td>JSON estático embebido (sin backend ni dependencias de runtime)</td></tr>
       <tr><td>Geocodificación</td><td>Nominatim / OpenStreetMap</td></tr>
       <tr><td>Procesamiento</td><td>Python (openpyxl, urllib, json)</td></tr>
